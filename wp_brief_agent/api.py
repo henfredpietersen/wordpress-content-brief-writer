@@ -91,7 +91,8 @@ _bearer = HTTPBearer(auto_error=False, description="The API_TOKEN set on the ser
 def require_token(
     creds: Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)] = None,
 ) -> None:
-    expected = os.getenv("API_TOKEN")
+    # Strip stray spaces or a newline picked up when the value was pasted into the host's settings.
+    expected = (os.getenv("API_TOKEN") or "").strip()
     if not expected:
         raise HTTPException(503, "Live endpoints are disabled: API_TOKEN is not configured.")
     if creds is None:

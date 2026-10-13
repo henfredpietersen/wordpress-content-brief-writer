@@ -156,6 +156,12 @@ def test_missing_token_has_its_own_message(live):
     assert r.status_code == 401 and "No token was sent" in r.json()["detail"]
 
 
+def test_server_token_with_stray_whitespace_still_matches(live, monkeypatch):
+    """A token pasted into the host's settings can pick up a trailing space or newline."""
+    monkeypatch.setenv("API_TOKEN", "test-token \n")
+    assert client.post("/brief", json={"topic": "cold brew"}, headers=live).status_code == 200
+
+
 def test_docs_page_keeps_authorization_across_reloads():
     html = client.get("/docs").text
     assert '"persistAuthorization": true' in html
