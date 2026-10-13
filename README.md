@@ -76,6 +76,9 @@ Only a live run measures the real model:
 python eval/run_eval.py --live
 ```
 
+In a **GitHub Codespace**, dependencies install automatically and Codespaces asks for
+`ANTHROPIC_API_KEY` when the codespace is created. Then run the command above in its terminal.
+
 Or run it on GitHub with no local setup: add a repository secret named `ANTHROPIC_API_KEY`
 (Settings > Secrets and variables > Actions), then open **Actions > Live eval > Run workflow**.
 The results table appears on the run page, and the full results, including each brief, can be
