@@ -70,6 +70,13 @@ via `render.yaml`. Try the public demo at
 interactive docs at [/docs](https://wp-brief-agent.onrender.com/docs). It sleeps when idle,
 so the first request can take about a minute.
 
+**Checked end to end on 13 Oct 2026:** with a bearer token, the deployed service returned 200
+on `POST /brief` (a full brief from Groq `openai/gpt-oss-120b`, with the posts it read) and on
+`POST /brief/stream` (token events streamed as the brief was written), both against the
+fictional demo site. Getting there surfaced four setup problems, each now either fixed in code or
+reported by a clear error: the docs page dropping the token, a token pasted with "Bearer", a lost
+docs login after reload, and stray whitespace in host settings.
+
 The same agent runs as a small FastAPI service (`wp_brief_agent/api.py`):
 
 | Route | Access | What it does |
