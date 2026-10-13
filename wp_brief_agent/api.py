@@ -144,9 +144,15 @@ def validate_site_url(url: str) -> str:
 
 
 def _setup(req: BriefRequest):
-    provider = (req.provider or os.getenv("LLM_PROVIDER") or "anthropic").lower()
+    # Forgive stray spaces, quotes and capitals in a value typed into the host's settings.
+    raw = req.provider or os.getenv("LLM_PROVIDER") or "anthropic"
+    provider = raw.strip().strip("\"'").strip().lower()
     if provider not in PROVIDERS:
-        raise HTTPException(422, f"provider must be one of: {', '.join(PROVIDERS)}.")
+        where = "the request's provider field" if req.provider else "LLM_PROVIDER on the server"
+        # The bad value is not echoed back: it may be a secret pasted into the wrong setting.
+        raise HTTPException(
+            422, f"provider must be one of: {', '.join(PROVIDERS)}. Check {where}."
+        )
     if not os.getenv(required_key(provider)):
         raise HTTPException(503, f"{required_key(provider)} is not configured on the server.")
     if req.site_url:

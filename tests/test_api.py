@@ -162,6 +162,18 @@ def test_server_token_with_stray_whitespace_still_matches(live, monkeypatch):
     assert client.post("/brief", json={"topic": "cold brew"}, headers=live).status_code == 200
 
 
+def test_provider_setting_tolerates_spaces_quotes_and_capitals(live, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", ' "Groq" ')
+    assert client.post("/brief", json={"topic": "cold brew"}, headers=live).status_code == 200
+
+
+def test_bad_provider_setting_names_the_setting_but_not_its_value(live, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "gsk_secret")
+    r = client.post("/brief", json={"topic": "cold brew"}, headers=live)
+    assert r.status_code == 422
+    assert "LLM_PROVIDER" in r.json()["detail"] and "gsk_secret" not in r.json()["detail"]
+
+
 def test_docs_page_keeps_authorization_across_reloads():
     html = client.get("/docs").text
     assert '"persistAuthorization": true' in html
