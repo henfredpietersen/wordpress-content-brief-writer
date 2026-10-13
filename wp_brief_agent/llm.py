@@ -48,7 +48,8 @@ class AnthropicLLM:
     def __init__(self, model: str | None = None, max_tokens: int = 2000, client=None):
         import anthropic  # imported here so offline runs do not need a key
 
-        self.model = model or os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL)
+        # `or` (not a getenv default) so an empty ANTHROPIC_MODEL still falls back.
+        self.model = model or os.getenv("ANTHROPIC_MODEL") or DEFAULT_MODEL
         self.max_tokens = max_tokens
         # The SDK reads ANTHROPIC_API_KEY and retries transient errors (2 retries by default).
         self.client = client or anthropic.Anthropic()

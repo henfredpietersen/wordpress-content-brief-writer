@@ -1,0 +1,50 @@
+# Runs the eval against real Claude. Started by hand only (Actions tab -> Live eval -> Run
+# workflow), never on push, so it only spends API credit when you choose.
+# Needs a repository secret named ANTHROPIC_API_KEY.
+name: Live eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "Claude model (leave blank for the default in llm.py)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Check the API key secret exists
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Add a repository secret named ANTHROPIC_API_KEY first (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+      - name: Run live eval
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: ${{ inputs.model }}
+        run: python eval/run_eval.py --live --summary-md eval/results/live.md
+      - name: Show results on the run page
+        if: always()
+        run: |
+          if [ -f eval/results/live.md ]; then cat eval/results/live.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Save full results (with each brief) as a download
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-eval-results
+          path: eval/results/
+          if-no-files-found: ignore

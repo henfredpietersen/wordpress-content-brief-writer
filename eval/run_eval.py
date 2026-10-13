@@ -34,6 +34,7 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--live", action="store_true")
     p.add_argument("--max-steps", type=int, default=6)
+    p.add_argument("--summary-md", help="Also write a markdown results table to this path.")
     args = p.parse_args()
     _load_dotenv(ROOT / ".env")
 
@@ -60,12 +61,14 @@ def main() -> int:
                 "finished": state["stopped_reason"] == "model_finished",
                 "research_turns": state["steps"],
                 "seconds": round(time.perf_counter() - start, 2),
+                "brief": state["brief"],
             }
         )
 
     scored = [r for r in rows if r["retrieval_hit"] is not None]
     summary = {
         "mode": mode,
+        "model": llm.model if args.live else "scripted stand-in",
         "cases": len(rows),
         "retrieval_hit_rate": round(sum(r["retrieval_hit"] for r in scored) / len(scored), 2),
         "grounded_rate": round(sum(r["grounded"] for r in rows) / len(rows), 2),
@@ -85,8 +88,31 @@ def main() -> int:
     out = ROOT / "eval" / "results"
     out.mkdir(exist_ok=True)
     (out / f"{mode}.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=2))
+    if args.summary_md:
+        Path(args.summary_md).write_text(to_markdown(summary, rows), encoding="utf-8")
     # Fail CI if any brief cites a page that was never read.
     return 0 if summary["grounded_rate"] == 1.0 else 1
+
+
+def to_markdown(summary: dict, rows: list[dict]) -> str:
+    lines = [
+        f"## Eval results ({summary['mode']}, model: {summary['model']})",
+        "",
+        "| Retrieval hit rate | Grounded | Finished on its own | Avg research turns |",
+        "|---|---|---|---|",
+        f"| {summary['retrieval_hit_rate']} | {summary['grounded_rate']} "
+        f"| {summary['finished_rate']} | {summary['avg_research_turns']} |",
+        "",
+        "| Topic | Expected post | Posts read | Hit | Grounded | Turns | Seconds |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        hit = "-" if r["retrieval_hit"] is None else ("yes" if r["retrieval_hit"] else "NO")
+        lines.append(
+            f"| {r['topic']} | {r['expect_read']} | {r['read_ids']} | {hit} "
+            f"| {'yes' if r['grounded'] else 'NO'} | {r['research_turns']} | {r['seconds']} |"
+        )
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

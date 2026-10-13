@@ -76,6 +76,12 @@ Only a live run measures the real model:
 python eval/run_eval.py --live
 ```
 
+Or run it on GitHub with no local setup: add a repository secret named `ANTHROPIC_API_KEY`
+(Settings > Secrets and variables > Actions), then open **Actions > Live eval > Run workflow**.
+The results table appears on the run page, and the full results, including each brief, can be
+downloaded as `live-eval-results`. It only runs when started by hand, so it never spends API
+credit on a normal push.
+
 **CI** (GitHub Actions) runs lint, the tests, the offline eval (it fails if any brief cites a
 page that was never read) and a CLI smoke test on every push.
 
