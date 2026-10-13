@@ -1,0 +1,62 @@
+{
+  "_note": "Fictional WordPress site used for offline tests and the offline eval. Shaped like the WordPress REST API /wp/v2/posts response.",
+  "site": "https://demo-roastery.test",
+  "posts": [
+    {
+      "id": 101,
+      "link": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/",
+      "title": {"rendered": "How to Choose a Coffee Grinder"},
+      "excerpt": {"rendered": "<p>Burr or blade? We compare grinder types for home brewers.</p>"},
+      "content": {"rendered": "<p>A burr grinder gives an even grind size, which matters for pour-over and espresso. Blade grinders are cheaper but produce uneven particles.</p><h2>Budget</h2><p>Entry-level hand grinders start around the price of two bags of beans.</p>"}
+    },
+    {
+      "id": 102,
+      "link": "https://demo-roastery.test/pour-over-brew-guide/",
+      "title": {"rendered": "Pour-Over Brew Guide"},
+      "excerpt": {"rendered": "<p>Step-by-step pour-over with ratios and timings.</p>"},
+      "content": {"rendered": "<p>Use a 1:16 coffee-to-water ratio. Bloom for 30 seconds, then pour in slow circles. Total brew time should land near three minutes.</p>"}
+    },
+    {
+      "id": 103,
+      "link": "https://demo-roastery.test/storing-coffee-beans/",
+      "title": {"rendered": "Storing Coffee Beans So They Stay Fresh"},
+      "excerpt": {"rendered": "<p>Air, light, heat and moisture are the enemies of fresh beans.</p>"},
+      "content": {"rendered": "<p>Keep beans in an opaque, airtight container at room temperature. Avoid the fridge: moisture condenses on the beans every time you open it.</p>"}
+    },
+    {
+      "id": 104,
+      "link": "https://demo-roastery.test/espresso-at-home/",
+      "title": {"rendered": "Espresso at Home: What You Actually Need"},
+      "excerpt": {"rendered": "<p>The grinder matters more than the machine.</p>"},
+      "content": {"rendered": "<p>For espresso, a grinder that adjusts in fine steps matters more than an expensive machine. Dose around 18 grams and aim for a 1:2 ratio.</p>"}
+    },
+    {
+      "id": 105,
+      "link": "https://demo-roastery.test/single-origin-vs-blend/",
+      "title": {"rendered": "Single Origin vs Blend"},
+      "excerpt": {"rendered": "<p>What the labels mean and how to pick.</p>"},
+      "content": {"rendered": "<p>Single-origin coffee comes from one farm or region and shows distinct flavours. Blends are built for balance and consistency, which suits milk drinks.</p>"}
+    },
+    {
+      "id": 106,
+      "link": "https://demo-roastery.test/subscription-faq/",
+      "title": {"rendered": "Coffee Subscription FAQ"},
+      "excerpt": {"rendered": "<p>Delivery days, pausing, and changing your beans.</p>"},
+      "content": {"rendered": "<p>Subscriptions ship every second Tuesday. You can pause or change your beans from your account page up to two days before dispatch.</p>"}
+    },
+    {
+      "id": 107,
+      "link": "https://demo-roastery.test/cold-brew-recipe/",
+      "title": {"rendered": "Cold Brew Recipe for Summer"},
+      "excerpt": {"rendered": "<p>A 12-hour cold brew that keeps for a week.</p>"},
+      "content": {"rendered": "<p>Use a coarse grind and a 1:8 ratio. Steep in the fridge for 12 hours, then strain. Dilute to taste before serving.</p>"}
+    },
+    {
+      "id": 108,
+      "link": "https://demo-roastery.test/roast-levels-explained/",
+      "title": {"rendered": "Roast Levels Explained"},
+      "excerpt": {"rendered": "<p>Light, medium and dark roasts compared.</p>"},
+      "content": {"rendered": "<p>Light roasts keep more origin character and acidity. Dark roasts taste bolder and more bitter. Medium roasts sit between the two.</p>"}
+    }
+  ]
+}
