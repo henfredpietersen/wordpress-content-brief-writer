@@ -48,7 +48,11 @@ Write the brief with these sections:
 ## Facts already on the site (each with its source URL)
 ## Gaps the new article should fill"""
 
-_URL_RE = re.compile(r"https?://[^\s)\]>\"']+")
+# Only characters that are valid unescaped in a URL. A looser "anything but whitespace"
+# pattern swallowed a model's full-width citation bracket (】) into the URL and flagged a
+# page that had been read. Brackets, parentheses and quotes are left out on purpose: they
+# wrap URLs in markdown and citations far more often than they appear inside them.
+_URL_RE = re.compile(r"https?://[A-Za-z0-9\-._~:/?#@!$&*+,;=%]+")
 
 
 class BriefState(TypedDict, total=False):

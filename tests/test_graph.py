@@ -31,6 +31,22 @@ def test_grounding_check_catches_an_invented_url():
     assert state["uncited_urls"] == ["https://demo-roastery.test/this-page-was-never-read"]
 
 
+def test_find_uncited_urls_handles_brackets_models_wrap_urls_in():
+    """Regression: a live Groq run cited a read page as 【https://x.test/a/】 and the
+    full-width bracket was treated as part of the URL, giving a false 'uncited' flag."""
+    fetched = {"https://x.test/a/": {}}
+    for brief in [
+        "Source: 【https://x.test/a/】",
+        "See [the guide](https://x.test/a/).",
+        "<https://x.test/a/>",
+        "(https://x.test/a/)",
+        "\"https://x.test/a/\"",
+    ]:
+        assert find_uncited_urls(brief, fetched) == [], brief
+    # and a genuinely unread page next to the bracket is still caught
+    assert find_uncited_urls("【https://x.test/b/】", fetched) == ["https://x.test/b"]
+
+
 def test_find_uncited_urls_ignores_trailing_slash_and_punctuation():
     fetched = {"https://x.test/a/": {}}
     assert find_uncited_urls("See https://x.test/a. Also https://x.test/b/", fetched) == [
