@@ -88,7 +88,9 @@ Run locally: `uvicorn wp_brief_agent.api:app --reload`, then open `http://127.0.
 
 **Deploy on Render (free plan):** `render.yaml` is a Render Blueprint. In Render, choose
 **New > Blueprint**, pick this repo, and enter `GROQ_API_KEY` (and/or `ANTHROPIC_API_KEY`) when
-asked. Render generates `API_TOKEN` itself, so no secret lives in the repo. Free services sleep
+asked. Render generates `API_TOKEN` itself, so no secret lives in the repo. Pushes only redeploy
+automatically if Render's GitHub app has access to the repo; otherwise use **Manual Deploy >
+Deploy latest commit** in Render. Free services sleep
 after 15 minutes without traffic, so the first request after that takes about a minute.
 A `Dockerfile` is included for any other container host.
 
