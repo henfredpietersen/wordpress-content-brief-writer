@@ -94,13 +94,13 @@ A `Dockerfile` is included for any other container host.
 
 ## What was tested
 
-**Unit and integration tests** (`pytest`, 38 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 41 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.
 - Anthropic wrapper (fake client): tools are sent, `tool_use` blocks are parsed, streamed tokens arrive in order.
 - OpenAI-compatible wrapper (fake client): history and tools are translated correctly, tool calls are parsed, malformed arguments don't crash, streaming works, and a full graph run completes through it.
-- Web API: the public demo works and is grounded; live routes are closed without a configured token, reject a missing or wrong token, enforce the hourly cap, report a missing provider key, refuse non-public `site_url`s, and the stream sends token events that add up to the final brief.
+- Web API: the public demo works and is grounded; live routes are closed without a configured token, reject a missing or wrong token, enforce the hourly cap, report a missing provider key, refuse non-public `site_url`s, and the stream sends token events that add up to the final brief. The docs page declares the token as a bearer login (a plain `Authorization` header parameter is silently dropped by Swagger UI), and its example body is a valid request.
 
 **Eval** (`eval/run_eval.py`, 7 cases on the fixture site) measures retrieval (did it read the post a good researcher would read), grounding (only cites what it read) and whether the model stopped on its own.
 

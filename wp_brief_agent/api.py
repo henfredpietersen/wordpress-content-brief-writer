@@ -24,11 +24,13 @@ import time
 from collections import deque
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Annotated
 from urllib.parse import urlparse
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Security
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel, ConfigDict, Field
 
 from .graph import run
 from .llm import PROVIDERS, ScriptedLLM, make_llm, required_key
@@ -53,14 +55,16 @@ _live_lock = threading.Lock()
 
 
 class BriefRequest(BaseModel):
-    topic: str = Field(min_length=2, max_length=200, examples=["cold brew"])
+    # One whole-body example, so the docs page pre-fills a request that actually works.
+    model_config = ConfigDict(json_schema_extra={"examples": [{"topic": "cold brew"}]})
+
+    topic: str = Field(min_length=2, max_length=200)
     site_url: str | None = Field(
         default=None,
-        description="Public WordPress site (https). Leave empty to use the fictional demo site.",
-        examples=[None],
+        description="Public WordPress site (https). Leave out to use the fictional demo site.",
     )
     provider: str | None = Field(
-        default=None, description="anthropic or groq. Defaults to LLM_PROVIDER on the server."
+        default=None, description="anthropic or groq. Leave out to use the server default."
     )
 
 
@@ -75,11 +79,19 @@ def _summary(state: dict) -> dict:
     }
 
 
-def require_token(authorization: str | None = Header(default=None)) -> None:
+# A declared bearer security scheme, not a plain `Authorization` header parameter: the docs
+# page (Swagger UI) silently drops header parameters named Authorization, per the OpenAPI
+# spec, but sends credentials entered through its Authorize button.
+_bearer = HTTPBearer(auto_error=False, description="The API_TOKEN set on the server.")
+
+
+def require_token(
+    creds: Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)] = None,
+) -> None:
     expected = os.getenv("API_TOKEN")
     if not expected:
         raise HTTPException(503, "Live endpoints are disabled: API_TOKEN is not configured.")
-    sent = (authorization or "").removeprefix("Bearer ").strip()
+    sent = creds.credentials.strip() if creds else ""
     if not hmac.compare_digest(sent.encode(), expected.encode()):
         raise HTTPException(401, "Missing or wrong bearer token.")
 

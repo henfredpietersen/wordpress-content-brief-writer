@@ -111,3 +111,29 @@ def test_site_url_must_be_public_https(url):
 
 def test_site_url_keeps_subfolder():
     assert api.validate_site_url("https://example.com/blog/") == "https://example.com/blog"
+
+
+def test_docs_page_can_send_the_token():
+    """Regression: the token was a plain `Authorization` header parameter, which Swagger UI
+    (the /docs page) silently drops per the OpenAPI spec, so every docs request got a 401.
+    It must be a declared bearer security scheme instead, which /docs sends via Authorize."""
+    spec = client.get("/openapi.json").json()
+    schemes = spec["components"]["securitySchemes"]
+    assert any(s["type"] == "http" and s["scheme"] == "bearer" for s in schemes.values())
+    for path in ("/brief", "/brief/stream"):
+        op = spec["paths"][path]["post"]
+        assert op.get("security"), f"{path} has no security requirement"
+        params = [p["name"].lower() for p in op.get("parameters", [])]
+        assert "authorization" not in params
+
+
+def test_docs_example_body_is_a_valid_request():
+    spec = client.get("/openapi.json").json()
+    example = spec["components"]["schemas"]["BriefRequest"]["examples"][0]
+    assert example == {"topic": "cold brew"}
+    assert api.BriefRequest(**example).topic == "cold brew"
+
+
+def test_non_bearer_scheme_is_rejected(live):
+    r = client.post("/brief", json={"topic": "cold brew"}, headers={"Authorization": "Basic abc"})
+    assert r.status_code == 401
