@@ -64,6 +64,12 @@ Defaults: `claude-sonnet-5-5` on Anthropic, `openai/gpt-oss-120b` on Groq. Overr
 
 ## Web API and deployment
 
+**Live:** https://wp-brief-agent.onrender.com, deployed on Render's free plan from this repo
+via `render.yaml`. Try the public demo at
+[/demo?topic=cold brew](https://wp-brief-agent.onrender.com/demo?topic=cold%20brew), or the
+interactive docs at [/docs](https://wp-brief-agent.onrender.com/docs). It sleeps when idle,
+so the first request can take about a minute.
+
 The same agent runs as a small FastAPI service (`wp_brief_agent/api.py`):
 
 | Route | Access | What it does |
