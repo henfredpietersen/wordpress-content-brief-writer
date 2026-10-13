@@ -92,8 +92,16 @@ def require_token(
     if not expected:
         raise HTTPException(503, "Live endpoints are disabled: API_TOKEN is not configured.")
     sent = creds.credentials.strip() if creds else ""
+    # Forgive the common slip of pasting "Bearer <token>" into the docs page's Authorize box,
+    # which already adds "Bearer", so the server would otherwise see "Bearer Bearer <token>".
+    if sent.lower().startswith("bearer "):
+        sent = sent[7:].strip()
     if not hmac.compare_digest(sent.encode(), expected.encode()):
-        raise HTTPException(401, "Missing or wrong bearer token.")
+        raise HTTPException(
+            401,
+            "Missing or wrong bearer token. In /docs, click Authorize and paste the token only, "
+            "without the word Bearer.",
+        )
 
 
 def _check_rate() -> None:

@@ -96,7 +96,7 @@ A `Dockerfile` is included for any other container host.
 
 ## What was tested
 
-**Unit and integration tests** (`pytest`, 41 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 43 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.

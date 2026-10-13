@@ -137,3 +137,14 @@ def test_docs_example_body_is_a_valid_request():
 def test_non_bearer_scheme_is_rejected(live):
     r = client.post("/brief", json={"topic": "cold brew"}, headers={"Authorization": "Basic abc"})
     assert r.status_code == 401
+
+
+def test_token_pasted_with_bearer_prefix_is_accepted(live):
+    """The docs Authorize box adds 'Bearer' itself; pasting 'Bearer <token>' must still work."""
+    doubled = {"Authorization": "Bearer Bearer test-token"}
+    assert client.post("/brief", json={"topic": "cold brew"}, headers=doubled).status_code == 200
+
+
+def test_wrong_token_error_explains_what_to_paste(live):
+    r = client.post("/brief", json={"topic": "cold brew"}, headers={"Authorization": "Bearer x"})
+    assert r.status_code == 401 and "without the word Bearer" in r.json()["detail"]
