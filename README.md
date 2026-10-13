@@ -76,8 +76,18 @@ Defaults: `claude-sonnet-5-5` on Anthropic, `openai/gpt-oss-120b` on Groq. Overr
 | Run | Retrieval hit rate | Grounded | Finished on its own | Avg research turns |
 |---|---|---|---|---|
 | Offline (scripted stand-in) | 1.00 | 1.00 | 1.00 | 3.86 |
-| Live: Groq | not run yet | | | |
-| Live: Claude | not run yet | | | |
+| Live: Groq `openai/gpt-oss-120b`, run 1 (13 Oct 2026) | 1.00 (6/6) | 0.86 (6/7)* | 0.57 (4/7) | 5.29 |
+| Live: Groq `openai/gpt-oss-120b`, run 2, after checker fix | 1.00 (6/6) | 1.00 (7/7) | 0.43 (3/7) | 5.71 |
+| Live: Claude | not run yet (needs API credit) | | | |
+
+\* A false positive in the grounding check, not a model error. See below.
+
+**What the live Groq runs showed:**
+- **Retrieval held up.** In both runs the model read the post a good researcher would read for all 6 topics that have one.
+- **It didn't invent sources.** For the topic the site doesn't cover ("matcha latte recipe"), it read nothing and cited nothing.
+- **Run 1 exposed a bug in the grounding check itself.** One brief cited a page the agent *had* read, but wrapped it as `【https://…】`, a citation style this model uses. The URL pattern treated the full-width bracket as part of the URL, so a correct citation was flagged as unread. The fix restricts matching to valid URL characters. A regression test covers this bracket, markdown links and other wrappers, and still catches a genuinely unread URL. Run 2, with the fix, was 7/7 grounded.
+- **The model often wants more than 6 research turns.** In run 2, 4 of 7 runs were stopped by the step limit rather than finishing on their own. The brief is still written from what was read, and stayed grounded, but this is the next thing to tune (the limit, or the research prompt).
+- **Runs vary.** "Finished on its own" moved from 4/7 to 3/7 between runs. With 7 cases, small differences are noise, not a trend.
 
 **Read the offline row carefully.** It comes from a scripted stand-in that follows a fixed
 recipe on a fictional site built for this repo, so it only proves the plumbing works. It says
@@ -108,7 +118,9 @@ page that was never read) and a CLI smoke test on every push.
 - Reads posts only, not pages, products or custom post types.
 - The fixture site's search is a simple keyword ranking, not real WordPress search.
 - No retrieval index: the agent relies on WordPress search, so results are only as good as the site's own search.
-- The live evals have not been run yet, so there are no model-quality numbers.
+- Claude has not been run live yet (the account needs API credit), so there are no Claude numbers. Groq has been run twice; see above.
+- 7 eval cases on a fictional site is a smoke test, not a benchmark.
+- The model often reaches the 6-turn research limit before stopping on its own.
 
 ## Layout
 
