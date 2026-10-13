@@ -62,14 +62,39 @@ python -m wp_brief_agent "cold brew" --offline
 Defaults: `claude-sonnet-5-5` on Anthropic, `openai/gpt-oss-120b` on Groq. Override with
 `ANTHROPIC_MODEL` or `GROQ_MODEL` in `.env`.
 
+## Web API and deployment
+
+The same agent runs as a small FastAPI service (`wp_brief_agent/api.py`):
+
+| Route | Access | What it does |
+|---|---|---|
+| `GET /health` | public | Liveness check |
+| `GET /demo?topic=…` | public, free | Scripted stand-in on the fictional site: shows the flow at no cost |
+| `POST /brief` | bearer token | Live model; returns the brief, the posts read and the grounding result as JSON |
+| `POST /brief/stream` | bearer token | Same, streamed as server-sent events (`token` events, then `done`) |
+| `GET /docs` | public | Interactive API docs |
+
+Live routes spend model quota, so they are off unless `API_TOKEN` is set, they compare the
+token in constant time, they cap live calls per hour (`LIVE_REQUESTS_PER_HOUR`, default 30), and
+`site_url` must be a public `https://` domain, not localhost, a private name or an IP address.
+
+Run locally: `uvicorn wp_brief_agent.api:app --reload`, then open `http://127.0.0.1:8000/docs`.
+
+**Deploy on Render (free plan):** `render.yaml` is a Render Blueprint. In Render, choose
+**New > Blueprint**, pick this repo, and enter `GROQ_API_KEY` (and/or `ANTHROPIC_API_KEY`) when
+asked. Render generates `API_TOKEN` itself, so no secret lives in the repo. Free services sleep
+after 15 minutes without traffic, so the first request after that takes about a minute.
+A `Dockerfile` is included for any other container host.
+
 ## What was tested
 
-**Unit and integration tests** (`pytest`, 20 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 38 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.
 - Anthropic wrapper (fake client): tools are sent, `tool_use` blocks are parsed, streamed tokens arrive in order.
 - OpenAI-compatible wrapper (fake client): history and tools are translated correctly, tool calls are parsed, malformed arguments don't crash, streaming works, and a full graph run completes through it.
+- Web API: the public demo works and is grounded; live routes are closed without a configured token, reject a missing or wrong token, enforce the hourly cap, report a missing provider key, refuse non-public `site_url`s, and the stream sends token events that add up to the final brief.
 
 **Eval** (`eval/run_eval.py`, 7 cases on the fixture site) measures retrieval (did it read the post a good researcher would read), grounding (only cites what it read) and whether the model stopped on its own.
 
@@ -130,6 +155,7 @@ wp_brief_agent/
   llm.py         Anthropic and OpenAI-compatible (Groq) wrappers + offline stand-in
   tools.py       tool definitions and executor
   wp_client.py   WordPress REST client + fixture client
+  api.py         FastAPI web service
   __main__.py    CLI
 eval/            cases and eval runner
 fixtures/        fictional WordPress site (REST-shaped JSON)
