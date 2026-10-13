@@ -1,7 +1,8 @@
 """Tiny eval for wp-brief-agent, run against the fictional fixture site.
 
-    python eval/run_eval.py            # offline: scripted stand-in model, no key needed
-    python eval/run_eval.py --live     # real Claude via the Anthropic API (needs ANTHROPIC_API_KEY)
+    python eval/run_eval.py                        # offline: scripted stand-in, no key needed
+    python eval/run_eval.py --live                 # real Claude (needs ANTHROPIC_API_KEY)
+    python eval/run_eval.py --live --provider groq # Groq, free plan (needs GROQ_API_KEY)
 
 Per case it checks:
 - retrieval: did the agent read the post a good researcher should read? (cases with
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -26,13 +28,14 @@ sys.path.insert(0, str(ROOT))
 
 from wp_brief_agent.__main__ import _load_dotenv  # noqa: E402
 from wp_brief_agent.graph import run  # noqa: E402
-from wp_brief_agent.llm import AnthropicLLM, ScriptedLLM  # noqa: E402
+from wp_brief_agent.llm import ScriptedLLM, make_llm, required_key  # noqa: E402
 from wp_brief_agent.wp_client import FixtureWPClient  # noqa: E402
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--live", action="store_true")
+    p.add_argument("--provider", choices=["anthropic", "groq"], default="anthropic")
     p.add_argument("--max-steps", type=int, default=6)
     p.add_argument("--summary-md", help="Also write a markdown results table to this path.")
     args = p.parse_args()
@@ -40,13 +43,23 @@ def main() -> int:
 
     wp = FixtureWPClient(ROOT / "fixtures" / "demo_site.json")
     cases = json.loads((ROOT / "eval" / "cases.json").read_text())
-    mode = "live" if args.live else "offline"
+    mode = f"live-{args.provider}" if args.live else "offline"
+    if args.live and not os.getenv(required_key(args.provider)):
+        print(f"{required_key(args.provider)} is not set.")
+        return 2
 
     rows = []
+    model_label = "scripted stand-in"
     for case in cases:
-        llm = AnthropicLLM() if args.live else ScriptedLLM()
+        llm = make_llm(args.provider) if args.live else ScriptedLLM()
+        if args.live:
+            model_label = f"{llm.provider}: {llm.model}"
         start = time.perf_counter()
-        state = run(case["topic"], wp.site, llm, wp, max_steps=args.max_steps)
+        try:
+            state = run(case["topic"], wp.site, llm, wp, max_steps=args.max_steps)
+        except Exception as exc:  # noqa: BLE001 - API errors (credit, auth, model) stop the run
+            print(f"Run stopped on case {case['topic']!r}: {type(exc).__name__}: {exc}")
+            return 2
         read_ids = sorted(p["id"] for p in state["fetched"].values())
         rows.append(
             {
@@ -68,7 +81,7 @@ def main() -> int:
     scored = [r for r in rows if r["retrieval_hit"] is not None]
     summary = {
         "mode": mode,
-        "model": llm.model if args.live else "scripted stand-in",
+        "model": model_label,
         "cases": len(rows),
         "retrieval_hit_rate": round(sum(r["retrieval_hit"] for r in scored) / len(scored), 2),
         "grounded_rate": round(sum(r["grounded"] for r in rows) / len(rows), 2),

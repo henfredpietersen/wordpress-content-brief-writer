@@ -1,8 +1,14 @@
 """Model access.
 
-AnthropicLLM calls the Anthropic Messages API directly (no LangChain wrapper):
-- research_turn() sends the tool definitions and returns any tool_use blocks.
+Every provider implements the same two methods, so the graph does not know which one it uses:
+- research_turn() sends the tool definitions and returns any tool calls.
 - stream_text() streams the final brief token by token.
+
+The graph keeps its message history in Anthropic's format (content blocks with tool_use and
+tool_result). AnthropicLLM sends that as-is. OpenAICompatibleLLM translates it to and from
+the OpenAI chat format, which Groq (and OpenAI itself) accept.
+
+AnthropicLLM calls the Anthropic Messages API directly (no LangChain wrapper).
 
 ScriptedLLM is a deterministic stand-in with the same interface. It lets the tests and the
 offline eval run with no API key. It does not reason; it follows a fixed script
@@ -20,6 +26,9 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b"
+PROVIDERS = ("anthropic", "groq")
 
 
 @dataclass
@@ -51,6 +60,7 @@ class AnthropicLLM:
         # `or` (not a getenv default) so an empty ANTHROPIC_MODEL still falls back.
         self.model = model or os.getenv("ANTHROPIC_MODEL") or DEFAULT_MODEL
         self.max_tokens = max_tokens
+        self.provider = "anthropic"
         # The SDK reads ANTHROPIC_API_KEY and retries transient errors (2 retries by default).
         self.client = client or anthropic.Anthropic()
 
@@ -84,6 +94,143 @@ class AnthropicLLM:
             for text in stream.text_stream:
                 on_token(text)
             return stream.get_final_text()
+
+
+class OpenAICompatibleLLM:
+    """Any OpenAI-compatible chat API. Used here for Groq (free plan available)."""
+
+    def __init__(
+        self,
+        model: str,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        max_tokens: int = 2000,
+        client=None,
+        provider: str = "openai",
+    ):
+        self.model = model
+        self.max_tokens = max_tokens
+        self.provider = provider
+        if client is None:
+            import openai  # imported here so offline runs do not need it configured
+
+            # Extra retries: free plans rate-limit (HTTP 429) and the SDK backs off on each.
+            client = openai.OpenAI(api_key=api_key, base_url=base_url, max_retries=5)
+        self.client = client
+
+    @staticmethod
+    def to_openai_messages(system: str, messages: list[dict]) -> list[dict]:
+        """Translate the graph's Anthropic-format history into OpenAI chat messages."""
+        out: list[dict] = [{"role": "system", "content": system}]
+        for msg in messages:
+            content = msg["content"]
+            if isinstance(content, str):
+                out.append({"role": msg["role"], "content": content})
+                continue
+            if msg["role"] == "assistant":
+                text = "".join(b["text"] for b in content if b.get("type") == "text")
+                calls = [
+                    {
+                        "id": b["id"],
+                        "type": "function",
+                        "function": {"name": b["name"], "arguments": json.dumps(b["input"])},
+                    }
+                    for b in content
+                    if b.get("type") == "tool_use"
+                ]
+                item: dict = {"role": "assistant", "content": text or None}
+                if calls:
+                    item["tool_calls"] = calls
+                out.append(item)
+            else:  # user turn carrying tool results
+                for b in content:
+                    if b.get("type") == "tool_result":
+                        out.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": b["tool_use_id"],
+                                "content": b["content"],
+                            }
+                        )
+                    elif b.get("type") == "text":
+                        out.append({"role": "user", "content": b["text"]})
+        return out
+
+    @staticmethod
+    def to_openai_tools(tools: list[dict]) -> list[dict]:
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t["description"],
+                    "parameters": t["input_schema"],
+                },
+            }
+            for t in tools
+        ]
+
+    def research_turn(self, system: str, messages: list[dict], tools: list[dict]) -> Turn:
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            messages=self.to_openai_messages(system, messages),
+            tools=self.to_openai_tools(tools),
+        )
+        choice = resp.choices[0]
+        message = choice.message
+        content: list[dict] = []
+        calls: list[ToolCall] = []
+        if message.content:
+            content.append({"type": "text", "text": message.content})
+        for tc in message.tool_calls or []:
+            try:
+                args = json.loads(tc.function.arguments or "{}")
+            except json.JSONDecodeError:
+                # Malformed arguments go to the tool as-is; execute_tool returns the error
+                # to the model instead of crashing the run.
+                args = {"_raw": tc.function.arguments}
+            content.append(
+                {"type": "tool_use", "id": tc.id, "name": tc.function.name, "input": args}
+            )
+            calls.append(ToolCall(tc.id, tc.function.name, args))
+        return Turn(content=content, tool_calls=calls, stop_reason=choice.finish_reason or "")
+
+    def stream_text(self, system: str, prompt: str, on_token: Callable[[str], None]) -> str:
+        stream = self.client.chat.completions.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+            stream=True,
+        )
+        parts: list[str] = []
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content
+            if delta:
+                parts.append(delta)
+                on_token(delta)
+        return "".join(parts)
+
+
+def make_llm(provider: str | None = None) -> AnthropicLLM | OpenAICompatibleLLM:
+    """Build the live model for a provider. Reads keys and model overrides from the environment."""
+    provider = (provider or os.getenv("LLM_PROVIDER") or "anthropic").lower()
+    if provider == "anthropic":
+        return AnthropicLLM()
+    if provider == "groq":
+        return OpenAICompatibleLLM(
+            model=os.getenv("GROQ_MODEL") or GROQ_DEFAULT_MODEL,
+            base_url=GROQ_BASE_URL,
+            api_key=os.getenv("GROQ_API_KEY"),
+            provider="groq",
+        )
+    raise ValueError(f"Unknown provider {provider!r}. Choose one of: {', '.join(PROVIDERS)}.")
+
+
+def required_key(provider: str) -> str:
+    return {"anthropic": "ANTHROPIC_API_KEY", "groq": "GROQ_API_KEY"}[provider]
 
 
 # --------------------------------------------------------------------------------------

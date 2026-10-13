@@ -35,6 +35,12 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--site", default=os.getenv("WP_SITE_URL"), help="WordPress site URL.")
     p.add_argument("--offline", action="store_true", help="Scripted model + fixture site.")
     p.add_argument("--max-steps", type=int, default=6)
+    p.add_argument(
+        "--provider",
+        choices=["anthropic", "groq"],
+        default=os.getenv("LLM_PROVIDER") or "anthropic",
+        help="Which model API to use (default: anthropic).",
+    )
     args = p.parse_args(argv)
 
     if args.offline:
@@ -43,13 +49,14 @@ def main(argv: list[str] | None = None) -> int:
         wp = FixtureWPClient(FIXTURE)
         site, llm = wp.site, ScriptedLLM()
     else:
+        from .llm import make_llm, required_key
+
         if not args.site:
             p.error("--site is required (or set WP_SITE_URL), unless --offline is used.")
-        if not os.getenv("ANTHROPIC_API_KEY"):
-            p.error("ANTHROPIC_API_KEY is not set. Copy .env.example to .env, or use --offline.")
-        from .llm import AnthropicLLM
-
-        wp, site, llm = WPClient(args.site), args.site, AnthropicLLM()
+        key = required_key(args.provider)
+        if not os.getenv(key):
+            p.error(f"{key} is not set. Copy .env.example to .env, or use --offline.")
+        wp, site, llm = WPClient(args.site), args.site, make_llm(args.provider)
 
     def show(token: str) -> None:
         sys.stdout.write(token)

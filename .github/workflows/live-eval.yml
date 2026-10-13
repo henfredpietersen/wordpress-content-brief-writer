@@ -1,13 +1,18 @@
-# Runs the eval against real Claude. Started by hand only (Actions tab -> Live eval -> Run
-# workflow), never on push, so it only spends API credit when you choose.
-# Needs a repository secret named ANTHROPIC_API_KEY.
+# Runs the eval against a real model. Started by hand only (Actions tab -> Live eval -> Run
+# workflow), never on push, so it only uses API credit or quota when you choose.
+# Needs a repository secret for the chosen provider: ANTHROPIC_API_KEY or GROQ_API_KEY.
 name: Live eval
 
 on:
   workflow_dispatch:
     inputs:
+      provider:
+        description: "Model API"
+        type: choice
+        options: [anthropic, groq]
+        default: anthropic
       model:
-        description: "Claude model (leave blank for the default in llm.py)"
+        description: "Model ID (leave blank for the default)"
         required: false
         default: ""
 
@@ -24,27 +29,24 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - name: Check the API key secret exists
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Add a repository secret named ANTHROPIC_API_KEY first (Settings > Secrets and variables > Actions)."
-            exit 1
-          fi
       - name: Run live eval
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ANTHROPIC_MODEL: ${{ inputs.model }}
-        run: python eval/run_eval.py --live --summary-md eval/results/live.md
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          ANTHROPIC_MODEL: ${{ inputs.provider == 'anthropic' && inputs.model || '' }}
+          GROQ_MODEL: ${{ inputs.provider == 'groq' && inputs.model || '' }}
+        run: >-
+          python eval/run_eval.py --live --provider ${{ inputs.provider }}
+          --summary-md eval/results/live-${{ inputs.provider }}.md
       - name: Show results on the run page
         if: always()
         run: |
-          if [ -f eval/results/live.md ]; then cat eval/results/live.md >> "$GITHUB_STEP_SUMMARY"; fi
+          f="eval/results/live-${{ inputs.provider }}.md"
+          if [ -f "$f" ]; then cat "$f" >> "$GITHUB_STEP_SUMMARY"; fi
       - name: Save full results (with each brief) as a download
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: live-eval-results
+          name: live-eval-results-${{ inputs.provider }}
           path: eval/results/
           if-no-files-found: ignore

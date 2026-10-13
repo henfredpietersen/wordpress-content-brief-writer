@@ -4,8 +4,12 @@
   "postCreateCommand": "pip install -r requirements.txt",
   "secrets": {
     "ANTHROPIC_API_KEY": {
-      "description": "Your Anthropic API key, used only by --live runs.",
+      "description": "Anthropic API key, for --live runs with Claude (needs API credit).",
       "documentationUrl": "https://console.anthropic.com/settings/keys"
+    },
+    "GROQ_API_KEY": {
+      "description": "Groq API key, for --live --provider groq runs (free plan available).",
+      "documentationUrl": "https://console.groq.com/keys"
     }
   }
 }
