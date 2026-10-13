@@ -48,6 +48,9 @@ app = FastAPI(
         "bearer token. Built AI-assisted under the direction of Henfred Pietersen."
     ),
     version="1.0.0",
+    # Keep the docs page's Authorize login across page reloads; without this, a refresh after
+    # authorizing silently sends requests with no token.
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 _live_calls: deque[float] = deque()
@@ -91,7 +94,14 @@ def require_token(
     expected = os.getenv("API_TOKEN")
     if not expected:
         raise HTTPException(503, "Live endpoints are disabled: API_TOKEN is not configured.")
-    sent = creds.credentials.strip() if creds else ""
+    if creds is None:
+        # Say plainly that nothing arrived; "missing or wrong" hid which problem it was.
+        raise HTTPException(
+            401,
+            "No token was sent. In /docs, click Authorize (padlock, top right), paste the token, "
+            "then Authorize and Close. If you reloaded the page, authorize again.",
+        )
+    sent = creds.credentials.strip()
     # Forgive the common slip of pasting "Bearer <token>" into the docs page's Authorize box,
     # which already adds "Bearer", so the server would otherwise see "Bearer Bearer <token>".
     if sent.lower().startswith("bearer "):
@@ -99,8 +109,8 @@ def require_token(
     if not hmac.compare_digest(sent.encode(), expected.encode()):
         raise HTTPException(
             401,
-            "Missing or wrong bearer token. In /docs, click Authorize and paste the token only, "
-            "without the word Bearer.",
+            "A token was sent but it is wrong. Copy API_TOKEN again from the server settings and "
+            "paste the token only, without the word Bearer.",
         )
 
 

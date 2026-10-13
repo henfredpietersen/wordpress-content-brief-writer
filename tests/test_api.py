@@ -147,4 +147,15 @@ def test_token_pasted_with_bearer_prefix_is_accepted(live):
 
 def test_wrong_token_error_explains_what_to_paste(live):
     r = client.post("/brief", json={"topic": "cold brew"}, headers={"Authorization": "Bearer x"})
-    assert r.status_code == 401 and "without the word Bearer" in r.json()["detail"]
+    assert r.status_code == 401 and "sent but it is wrong" in r.json()["detail"]
+
+
+def test_missing_token_has_its_own_message(live):
+    """Regression: one 'missing or wrong' message hid that /docs sent no token at all."""
+    r = client.post("/brief", json={"topic": "cold brew"})
+    assert r.status_code == 401 and "No token was sent" in r.json()["detail"]
+
+
+def test_docs_page_keeps_authorization_across_reloads():
+    html = client.get("/docs").text
+    assert '"persistAuthorization": true' in html
