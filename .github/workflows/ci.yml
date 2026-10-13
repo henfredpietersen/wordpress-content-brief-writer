@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Lint
+        run: ruff check .
+      - name: Tests (no API key, no network)
+        run: pytest -q
+      - name: Offline eval (fails if any brief cites a page it never read)
+        run: python eval/run_eval.py
+      - name: CLI smoke test
+        run: python -m wp_brief_agent "cold brew" --offline

@@ -1,0 +1,9 @@
+[
+  {"topic": "choosing a burr grinder for home espresso", "expect_read": 101},
+  {"topic": "how to brew pour-over coffee", "expect_read": 102},
+  {"topic": "keeping coffee beans fresh", "expect_read": 103},
+  {"topic": "making cold brew at home", "expect_read": 107},
+  {"topic": "light vs dark roast", "expect_read": 108},
+  {"topic": "pausing a coffee subscription", "expect_read": 106},
+  {"topic": "matcha latte recipe", "expect_read": null}
+]
