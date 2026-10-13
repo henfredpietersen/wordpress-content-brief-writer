@@ -22,3 +22,8 @@ jobs:
         run: python eval/run_eval.py
       - name: CLI smoke test
         run: python -m wp_brief_agent "cold brew" --offline
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Google Workspace script tests (fake Sheet, Docs and HTTP)
+        run: node --test workspace/test/*.test.js

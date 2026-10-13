@@ -101,6 +101,15 @@ Deploy latest commit** in Render. Free services sleep
 after 15 minutes without traffic, so the first request after that takes about a minute.
 A `Dockerfile` is included for any other container host.
 
+## Google Workspace: a Sheet that writes briefs into Docs
+
+`workspace/` holds an Apps Script for a Google Sheet. Each row is a topic (and optionally a
+WordPress site). One menu click, or an hourly trigger, sends new rows to the live `/brief`
+endpoint, writes each brief into its own Google Doc, and fills in the row with the Doc link,
+the grounding result, the posts read and the model. The API token is kept in the user's Apps
+Script properties, not in the Sheet or the code. Setup takes about 5 minutes and needs no code:
+see [workspace/README.md](workspace/README.md).
+
 ## What was tested
 
 **Unit and integration tests** (`pytest`, 48 tests, no key or network needed):
@@ -150,8 +159,11 @@ eval > Run workflow** and pick the provider. The results table appears on the ru
 full results, including each brief, can be downloaded. It only runs when started by hand, so it
 never spends API credit on a normal push.
 
+**Google Workspace script** (`node --test workspace/test/*.test.js`, 12 tests): helpers, plus the
+full Sheet-to-Doc run against fake Google services. See [workspace/README.md](workspace/README.md).
+
 **CI** (GitHub Actions) runs lint, the tests, the offline eval (it fails if any brief cites a
-page that was never read) and a CLI smoke test on every push.
+page that was never read), a CLI smoke test and the Workspace script tests on every push.
 
 ## Known limits
 
@@ -172,6 +184,7 @@ wp_brief_agent/
   wp_client.py   WordPress REST client + fixture client
   api.py         FastAPI web service
   __main__.py    CLI
+workspace/       Google Apps Script: Sheet queue -> live API -> Google Docs (+ Node tests)
 eval/            cases and eval runner
 fixtures/        fictional WordPress site (REST-shaped JSON)
 tests/           pytest suite
