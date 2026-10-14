@@ -1,4 +1,54 @@
-# wp-brief-agent
+# WordPress Content Brief Writer
+
+An AI helper that reads a WordPress website and writes a **content brief**: a plan for a new article, based on what the site already says.
+
+> *Previously named `wp-brief-agent`.*
+
+## In plain English
+
+**The problem.** Before someone writes a new article for a website, they usually need a brief: an outline, a list of existing pages to link to, and facts the site has already published. Putting that together means reading through a lot of old posts.
+
+**What this does.** You give it a topic (for example "cold brew") and a WordPress website address. The AI searches the site, reads the most relevant posts, and writes a brief that contains:
+
+- an outline for the new article
+- which existing pages to link to
+- facts from the site that can be reused
+
+**Why you can trust the sources.** The brief is only allowed to mention pages the AI actually read. A final check looks for any web address in the brief that the AI never opened, and flags it. This guards against the AI making up sources.
+
+**It can only look, not change.** It reads the public pages of a site. It cannot edit, post or delete anything.
+
+**Ways to use it**
+
+- Type one command on a computer (needs some technical setup).
+- Use the **live demo**, which runs on a made-up example website: https://wp-brief-agent.onrender.com/demo?topic=cold%20brew. It sleeps when idle, so the first visit can take about a minute.
+- Use the included **Google Sheet add-on**: list topics in a spreadsheet, click a menu item, and a finished brief appears in its own Google Doc.
+
+## Where things stand
+
+- It works, and it has been tested. There is an automated test suite of 48 tests, and the live version was checked end to end on 13 October 2026.
+- It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
+- **Not yet tested with Claude** (the other supported AI): that needs paid API credit.
+- Only 7 test cases were run, on a fictional site. That is a quick health check, not a proper benchmark.
+- It only reads blog posts, not other kinds of pages such as products.
+
+## Plain-English glossary
+
+| Term | What it means here |
+|---|---|
+| Content brief | A planning document for an article: outline, links and facts to reuse |
+| AI agent | An AI that decides its own next steps (search, read a post, write) instead of answering once |
+| Grounded | Every source the brief mentions was really read by the AI |
+| API | A way for programs to talk to each other, such as a program asking an AI to do work |
+| LangGraph | A tool for building multi-step AI workflows |
+| Anthropic / Groq | Companies that provide the AI models this can use (Claude and others) |
+| REST | The standard way a WordPress site shares its public content with programs |
+
+*The Python package inside this repository is still called `wp_brief_agent`, so command examples below use that name.*
+
+---
+
+## For developers: technical documentation
 
 A small agent that researches an existing WordPress site and writes a content brief for a new
 article. It finds what the site already says on the topic, reads the most relevant posts, and
@@ -15,7 +65,7 @@ integration.
 > key, one graph for any model provider). Claude generated the code. I reviewed it, ran the
 > tests and eval, and can walk through every decision. I did not hand-type it.
 
-## How it works
+### How it works
 
 ```
 START -> research --(tool calls, under step limit)--> tools -> research
@@ -41,7 +91,7 @@ Guardrails:
 - **Bounded input.** Each post is cut to 4,000 characters before it reaches the model.
 - **Malformed tool arguments** from a model are passed back to it as an error, not a crash.
 
-## Run it
+### Run it
 
 Requires Python 3.11+.
 
@@ -62,7 +112,7 @@ python -m wp_brief_agent "cold brew" --offline
 Defaults: `claude-sonnet-5-5` on Anthropic, `openai/gpt-oss-120b` on Groq. Override with
 `ANTHROPIC_MODEL` or `GROQ_MODEL` in `.env`.
 
-## Web API and deployment
+### Web API and deployment
 
 **Live:** https://wp-brief-agent.onrender.com, deployed on Render's free plan from this repo
 via `render.yaml`. Try the public demo at
@@ -101,7 +151,7 @@ Deploy latest commit** in Render. Free services sleep
 after 15 minutes without traffic, so the first request after that takes about a minute.
 A `Dockerfile` is included for any other container host.
 
-## Google Workspace: a Sheet that writes briefs into Docs
+### Google Workspace: a Sheet that writes briefs into Docs
 
 `workspace/` holds an Apps Script for a Google Sheet. Each row is a topic (and optionally a
 WordPress site). One menu click, or an hourly trigger, sends new rows to the live `/brief`
@@ -110,7 +160,7 @@ the grounding result, the posts read and the model. The API token is kept in the
 Script properties, not in the Sheet or the code. Setup takes about 5 minutes and needs no code:
 see [workspace/README.md](workspace/README.md).
 
-## What was tested
+### What was tested
 
 **Unit and integration tests** (`pytest`, 48 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
@@ -165,7 +215,7 @@ full Sheet-to-Doc run against fake Google services. See [workspace/README.md](wo
 **CI** (GitHub Actions) runs lint, the tests, the offline eval (it fails if any brief cites a
 page that was never read), a CLI smoke test and the Workspace script tests on every push.
 
-## Known limits
+### Known limits
 
 - Reads posts only, not pages, products or custom post types.
 - The fixture site's search is a simple keyword ranking, not real WordPress search.
@@ -174,7 +224,7 @@ page that was never read), a CLI smoke test and the Workspace script tests on ev
 - 7 eval cases on a fictional site is a smoke test, not a benchmark.
 - The model often reaches the 6-turn research limit before stopping on its own.
 
-## Layout
+### Layout
 
 ```
 wp_brief_agent/
