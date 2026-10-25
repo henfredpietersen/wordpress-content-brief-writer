@@ -27,6 +27,7 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 ## Where things stand
 
 - It works, and it has been tested. There is an automated test suite of 48 tests, and the live version was checked end to end on 13 October 2026.
+- The Google Sheet add-on was run for real on 25 October 2026: a topic typed into the Sheet came back as a finished Google Doc, marked as grounded.
 - It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
 - **Not yet tested with Claude** (the other supported AI): that needs paid API credit.
 - Only 7 test cases were run, on a fictional site. That is a quick health check, not a proper benchmark.
@@ -159,6 +160,10 @@ endpoint, writes each brief into its own Google Doc, and fills in the row with t
 the grounding result, the posts read and the model. The API token is kept in the user's Apps
 Script properties, not in the Sheet or the code. Setup takes about 5 minutes and needs no code:
 see [workspace/README.md](workspace/README.md).
+
+**Run in a real Google account on 25 Oct 2026:** the topic "cold brew" went from the Sheet to the
+live API and back as a Google Doc with title, angle, outline and the posts read. The row was
+filled in as Done, Grounded: yes, 1 post read, Groq `openai/gpt-oss-120b`.
 
 ### What was tested
 

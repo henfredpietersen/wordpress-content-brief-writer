@@ -56,3 +56,13 @@ and the full run is tested against fake Sheet, Docs, HTTP and properties service
 done are skipped, the token is sent as a bearer header, the row is filled in, an ungrounded brief
 is flagged, a wrong token stops the run, one bad site doesn't stop the rest, and the per-run cap
 holds. These tests don't prove Google's own services behave as faked; a run in a real Sheet does.
+
+**Real run, 25 Oct 2026:** in a Google account, row "cold brew" went to the live API and came back
+as a Google Doc (title, angle, outline, posts read). The row was filled in as Done, Grounded: yes,
+1 post read, model Groq `openai/gpt-oss-120b`. Two things the real run showed that the fakes
+could not:
+
+- The **Set API token** box counts against Apps Script's 6-minute limit while it waits. Copy the
+  token *before* opening the box, or the run times out and nothing is saved.
+- A wrong token comes back as `Error: token rejected` in the Status column and stops the run, as
+  designed. Re-setting the token and running again picks the row up, because it has no Doc yet.
