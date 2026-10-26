@@ -48,6 +48,16 @@ Write the brief with these sections:
 ## Facts already on the site (each with its source URL)
 ## Gaps the new article should fill"""
 
+# Added only when a Figma design is supplied. Design text is layout context, not a source:
+# the writer may not take facts or URLs from it, so the grounding check is unchanged.
+DESIGN_TEMPLATE = """
+
+<design name="{name}">{sections}</design>
+The <design> block lists the sections of the page design this article will be built into.
+Use it only to shape the outline. Do not take facts or URLs from it.
+Add one more section at the end:
+## Fit with the design (for each outline H2, the design section it belongs in, or "new section")"""
+
 # Only characters that are valid unescaped in a URL. A looser "anything but whitespace"
 # pattern swallowed a model's full-width citation bracket (】) into the URL and flagged a
 # page that had been read. Brackets, parentheses and quotes are left out on purpose: they
@@ -64,6 +74,7 @@ class BriefState(TypedDict, total=False):
     stopped_reason: str
     brief: str
     uncited_urls: list[str]
+    design: dict
 
 
 def _norm(url: str) -> str:
@@ -134,6 +145,15 @@ def build_graph(
         prompt = WRITE_TEMPLATE.format(
             topic=state["topic"], site=state["site"], sources=json.dumps(sources, indent=1)
         )
+        design = state.get("design")
+        if design and design.get("sections"):
+            outline = [
+                {"frame": s["frame"], "heading": s["heading"], "texts": s["texts"]}
+                for s in design["sections"]
+            ]
+            prompt += DESIGN_TEMPLATE.format(
+                name=design.get("name", ""), sections=json.dumps(outline, indent=1)
+            )
         brief = llm.stream_text(WRITE_SYSTEM, prompt, emit)
         return {"brief": brief, "stopped_reason": stopped}
 
@@ -160,11 +180,19 @@ def run(
     wp: WordPressSource,
     max_steps: int = 6,
     on_token: Callable[[str], None] | None = None,
+    design: dict | None = None,
 ) -> BriefState:
     graph = build_graph(llm, wp, max_steps=max_steps, on_token=on_token)
     first = {"role": "user", "content": f"Topic: {topic}\nSite: {site}"}
     # recursion_limit counts graph steps; research+tools is 2 per turn, plus write and check.
     return graph.invoke(
-        {"topic": topic, "site": site, "messages": [first], "fetched": {}, "steps": 0},
+        {
+            "topic": topic,
+            "site": site,
+            "messages": [first],
+            "fetched": {},
+            "steps": 0,
+            "design": design or {},
+        },
         config={"recursion_limit": 2 * max_steps + 5},
     )

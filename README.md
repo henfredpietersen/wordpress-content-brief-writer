@@ -165,9 +165,27 @@ see [workspace/README.md](workspace/README.md).
 live API and back as a Google Doc with title, angle, outline and the posts read. The row was
 filled in as Done, Grounded: yes, 1 post read, Groq `openai/gpt-oss-120b`.
 
+### Figma: shape the brief to a page design
+
+Pass a Figma file and the brief's outline is written to fit the design's sections:
+
+```bash
+python -m wp_brief_agent "cold brew" --site https://your-wordpress-site.com --figma https://www.figma.com/design/<KEY>/<name>
+python -m wp_brief_agent.figma https://www.figma.com/design/<KEY>/<name>   # just print the design's content map
+```
+
+`figma_client.py` reads the file through the Figma REST API (GET only, `X-Figma-Token` header,
+token in `FIGMA_TOKEN`). For each top-level frame it collects the text layers in reading order
+(top to bottom, then left to right), skips hidden layers, and takes the largest text as the
+section heading. The writer receives this as a `<design>` block and adds a **Fit with the
+design** section mapping each outline heading to a design section. Design text is layout
+context only: the prompt forbids taking facts or URLs from it, so the grounding check is
+unchanged. Tests use a recorded Figma-shaped file (`fixtures/figma_landing.json`), so no token is
+needed for CI.
+
 ### What was tested
 
-**Unit and integration tests** (`pytest`, 48 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 61 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.

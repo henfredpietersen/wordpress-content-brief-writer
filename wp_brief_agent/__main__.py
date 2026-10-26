@@ -36,6 +36,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--offline", action="store_true", help="Scripted model + fixture site.")
     p.add_argument("--max-steps", type=int, default=6)
     p.add_argument(
+        "--figma",
+        default=os.getenv("FIGMA_FILE"),
+        help="Optional Figma file URL or key to shape the outline (needs FIGMA_TOKEN).",
+    )
+    p.add_argument(
         "--provider",
         choices=["anthropic", "groq"],
         default=os.getenv("LLM_PROVIDER") or "anthropic",
@@ -58,11 +63,21 @@ def main(argv: list[str] | None = None) -> int:
             p.error(f"{key} is not set. Copy .env.example to .env, or use --offline.")
         wp, site, llm = WPClient(args.site), args.site, make_llm(args.provider)
 
+    design = None
+    if args.figma:
+        from .figma_client import FigmaError, load_design
+
+        try:
+            design = load_design(args.figma, os.getenv("FIGMA_TOKEN", ""))
+        except FigmaError as exc:
+            p.error(str(exc))
+        print(f"Design: '{design['name']}', {len(design['sections'])} section(s) with text.\n")
+
     def show(token: str) -> None:
         sys.stdout.write(token)
         sys.stdout.flush()
 
-    state = run(args.topic, site, llm, wp, max_steps=args.max_steps, on_token=show)
+    state = run(args.topic, site, llm, wp, max_steps=args.max_steps, on_token=show, design=design)
 
     print("\n---")
     print(f"Research turns: {state['steps']} ({state['stopped_reason']})")

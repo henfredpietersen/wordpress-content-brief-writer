@@ -1,0 +1,62 @@
+{
+  "name": "Demo Roastery: blog post template",
+  "document": {
+    "id": "0:0",
+    "type": "DOCUMENT",
+    "children": [
+      {
+        "id": "0:1",
+        "type": "CANVAS",
+        "name": "Blog post",
+        "children": [
+          {
+            "id": "1:1",
+            "type": "FRAME",
+            "name": "Hero",
+            "children": [
+              {"id": "1:3", "type": "TEXT", "characters": "Short intro under the title",
+               "style": {"fontSize": 18}, "absoluteBoundingBox": {"x": 0, "y": 120}},
+              {"id": "1:2", "type": "TEXT", "characters": "Article title goes here",
+               "style": {"fontSize": 48}, "absoluteBoundingBox": {"x": 0, "y": 40}},
+              {"id": "1:4", "type": "TEXT", "characters": "Hidden draft note", "visible": false,
+               "style": {"fontSize": 12}, "absoluteBoundingBox": {"x": 0, "y": 10}}
+            ]
+          },
+          {
+            "id": "2:1",
+            "type": "FRAME",
+            "name": "Steps",
+            "children": [
+              {"id": "2:2", "type": "GROUP", "name": "Step cards", "children": [
+                {"id": "2:4", "type": "TEXT", "characters": "Step 2", "style": {"fontSize": 20},
+                 "absoluteBoundingBox": {"x": 400, "y": 700}},
+                {"id": "2:3", "type": "TEXT", "characters": "Step 1", "style": {"fontSize": 20},
+                 "absoluteBoundingBox": {"x": 0, "y": 700}}
+              ]},
+              {"id": "2:5", "type": "TEXT", "characters": "How to do it", "style": {"fontSize": 32},
+               "absoluteBoundingBox": {"x": 0, "y": 620}}
+            ]
+          },
+          {"id": "3:1", "type": "FRAME", "name": "Decoration only", "children": [
+            {"id": "3:2", "type": "RECTANGLE", "name": "Background"}
+          ]},
+          {
+            "id": "4:1",
+            "type": "FRAME",
+            "name": "Newsletter CTA",
+            "children": [
+              {"id": "4:2", "type": "TEXT", "characters": "Get fresh beans   every month",
+               "style": {"fontSize": 28}, "absoluteBoundingBox": {"x": 0, "y": 1200}}
+            ]
+          }
+        ]
+      },
+      {"id": "9:9", "type": "CANVAS", "name": "Archive", "children": [
+        {"id": "9:10", "type": "FRAME", "name": "Old hero", "visible": false, "children": [
+          {"id": "9:11", "type": "TEXT", "characters": "Old title", "style": {"fontSize": 40},
+           "absoluteBoundingBox": {"x": 0, "y": 0}}
+        ]}
+      ]}
+    ]
+  }
+}
