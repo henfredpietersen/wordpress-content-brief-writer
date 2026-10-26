@@ -32,6 +32,7 @@ def test_live_client_calls_wordpress_rest_search():
     def handler(request: httpx.Request) -> httpx.Response:
         seen["path"] = request.url.path
         seen["search"] = request.url.params["search"]
+        seen["orderby"] = request.url.params.get("orderby")
         return httpx.Response(
             200,
             json=[
@@ -46,7 +47,9 @@ def test_live_client_calls_wordpress_rest_search():
 
     wp = WPClient("https://site.test/", client=_mock_client(handler))
     out = wp.search_posts("cold brew")
-    assert seen == {"path": "/wp-json/wp/v2/posts", "search": "cold brew"}
+    # orderby=relevance matters: the REST API sorts search results by date by default, so on a
+    # big blog the top results were just the newest posts (found on blacksmith.agency, 218 posts).
+    assert seen == {"path": "/wp-json/wp/v2/posts", "search": "cold brew", "orderby": "relevance"}
     assert out == [{"id": 7, "title": "A & B", "url": "https://site.test/a/", "excerpt": "x"}]
 
 

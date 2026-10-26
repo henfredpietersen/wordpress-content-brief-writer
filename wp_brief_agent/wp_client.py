@@ -63,6 +63,9 @@ class WPClient:
             f"{self.base}/posts",
             params={
                 "search": query,
+                # Without this the REST API sorts matches by date, so a large blog returns its
+                # newest posts rather than the most relevant ones.
+                "orderby": "relevance",
                 "per_page": max(1, min(limit, 10)),
                 "_fields": "id,title,link,excerpt",
             },
