@@ -21,6 +21,7 @@ _WORD_RE = re.compile(r"[a-z0-9]+")
 
 # Longest page text handed to the model, so one huge page cannot flood the context.
 MAX_CONTENT_CHARS = 4000
+USER_AGENT = "wp-brief-agent/1.0 (+https://github.com/henfredpietersen/wordpress-content-brief-writer)"
 
 
 def html_to_text(raw: str) -> str:
@@ -57,10 +58,14 @@ class WPClient:
     def __init__(self, site_url: str, timeout: float = 15.0, client: httpx.Client | None = None):
         self.base = site_url.rstrip("/") + "/wp-json/wp/v2"
         self._http = client or httpx.Client(timeout=timeout, follow_redirects=True)
+        # Name the tool honestly. Some sites (seen behind Cloudflare) return 403 to the default
+        # "python-httpx" user agent but allow a bot that says who it is and where it comes from.
+        self._headers = {"User-Agent": USER_AGENT}
 
     def search_posts(self, query: str, limit: int = 5) -> list[dict]:
         resp = self._http.get(
             f"{self.base}/posts",
+            headers=self._headers,
             params={
                 "search": query,
                 # Without this the REST API sorts matches by date, so a large blog returns its
@@ -76,6 +81,7 @@ class WPClient:
     def get_post(self, post_id: int) -> dict | None:
         resp = self._http.get(
             f"{self.base}/posts/{int(post_id)}",
+            headers=self._headers,
             params={"_fields": "id,title,link,excerpt,content"},
         )
         if resp.status_code == 404:
