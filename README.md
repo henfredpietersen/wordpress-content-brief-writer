@@ -29,7 +29,7 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 - It works, and it has been tested. There is an automated test suite of 48 tests, and the live version was checked end to end on 13 October 2026.
 - The Google Sheet add-on was run for real on 25 October 2026: a topic typed into the Sheet came back as a finished Google Doc, marked as grounded.
 - It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
-- **Not yet tested with Claude** (the other supported AI): that needs paid API credit.
+- It was also tested with Claude (`claude-sonnet-5-5`) on 26 October 2026: right post read in all 6 cases, no invented sources in all 7, and it finished every run on its own, in fewer steps than Groq.
 - Only 7 test cases were run, on a fictional site. That is a quick health check, not a proper benchmark.
 - It only reads blog posts, not other kinds of pages such as products.
 
@@ -182,7 +182,7 @@ filled in as Done, Grounded: yes, 1 post read, Groq `openai/gpt-oss-120b`.
 | Offline (scripted stand-in) | 1.00 | 1.00 | 1.00 | 3.86 |
 | Live: Groq `openai/gpt-oss-120b`, run 1 (13 Oct 2026) | 1.00 (6/6) | 0.86 (6/7)* | 0.57 (4/7) | 5.29 |
 | Live: Groq `openai/gpt-oss-120b`, run 2, after checker fix | 1.00 (6/6) | 1.00 (7/7) | 0.43 (3/7) | 5.71 |
-| Live: Claude | not run yet (needs API credit) | | | |
+| Live: Claude `claude-sonnet-5-5` (26 Oct 2026) | 1.00 (6/6) | 1.00 (7/7) | 1.00 (7/7) | 3.14 |
 
 \* A false positive in the grounding check, not a model error. See below.
 
@@ -192,6 +192,11 @@ filled in as Done, Grounded: yes, 1 post read, Groq `openai/gpt-oss-120b`.
 - **Run 1 exposed a bug in the grounding check itself.** One brief cited a page the agent *had* read, but wrapped it as `【https://…】`, a citation style this model uses. The URL pattern treated the full-width bracket as part of the URL, so a correct citation was flagged as unread. The fix restricts matching to valid URL characters. A regression test covers this bracket, markdown links and other wrappers, and still catches a genuinely unread URL. Run 2, with the fix, was 7/7 grounded.
 - **The model often wants more than 6 research turns.** In run 2, 4 of 7 runs were stopped by the step limit rather than finishing on their own. The brief is still written from what was read, and stayed grounded, but this is the next thing to tune (the limit, or the research prompt).
 - **Runs vary.** "Finished on its own" moved from 4/7 to 3/7 between runs. With 7 cases, small differences are noise, not a trend.
+
+**What the live Claude run showed:**
+- **Same retrieval and grounding as Groq, and it stopped on its own every time.** All 7 runs finished before the 6-turn limit, averaging 3.14 research turns against Groq's 5.71. On this fixture site, the step-limit issue seen with Groq didn't appear with Claude.
+- **On the topic the site doesn't cover ("matcha latte recipe"), it read two unrelated posts** before writing, where Groq read none. It still cited only what it read (grounded), so the check passed; whether reading those posts was useful is a judgment call, not a failure.
+- **One run on 7 cases.** Treat it as a health check, not a benchmark comparison between models.
 
 **Read the offline row carefully.** It comes from a scripted stand-in that follows a fixed
 recipe on a fictional site built for this repo, so it only proves the plumbing works. It says
@@ -225,9 +230,9 @@ page that was never read), a CLI smoke test and the Workspace script tests on ev
 - Reads posts only, not pages, products or custom post types.
 - The fixture site's search is a simple keyword ranking, not real WordPress search.
 - No retrieval index: the agent relies on WordPress search, so results are only as good as the site's own search.
-- Claude has not been run live yet (the account needs API credit), so there are no Claude numbers. Groq has been run twice; see above.
+- Claude has been run live once and Groq twice, each on the same 7 cases; see above.
 - 7 eval cases on a fictional site is a smoke test, not a benchmark.
-- The model often reaches the 6-turn research limit before stopping on its own.
+- On Groq, the model often reaches the 6-turn research limit before stopping on its own (Claude did not, in its one run).
 
 ### Layout
 
