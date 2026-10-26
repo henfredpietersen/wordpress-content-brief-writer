@@ -54,7 +54,7 @@ class LLM(Protocol):
 
 
 class AnthropicLLM:
-    def __init__(self, model: str | None = None, max_tokens: int = 2000, client=None):
+    def __init__(self, model: str | None = None, max_tokens: int = 4000, client=None):
         import anthropic  # imported here so offline runs do not need a key
 
         # `or` (not a getenv default) so an empty ANTHROPIC_MODEL still falls back.
@@ -93,6 +93,9 @@ class AnthropicLLM:
         ) as stream:
             for text in stream.text_stream:
                 on_token(text)
+            final = stream.get_final_message()
+            # "max_tokens" means the brief was cut off; the graph reports it instead of hiding it.
+            self.last_stop_reason = final.stop_reason or ""
             return stream.get_final_text()
 
 
@@ -104,7 +107,7 @@ class OpenAICompatibleLLM:
         model: str,
         base_url: str | None = None,
         api_key: str | None = None,
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         client=None,
         provider: str = "openai",
     ):
@@ -204,9 +207,13 @@ class OpenAICompatibleLLM:
             stream=True,
         )
         parts: list[str] = []
+        self.last_stop_reason = ""
         for chunk in stream:
             if not chunk.choices:
                 continue
+            finish = getattr(chunk.choices[0], "finish_reason", None)
+            if finish:
+                self.last_stop_reason = finish  # "length" means the brief was cut off
             delta = chunk.choices[0].delta.content
             if delta:
                 parts.append(delta)

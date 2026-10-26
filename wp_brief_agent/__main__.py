@@ -84,6 +84,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Posts read: {len(state['fetched'])}")
     for url, post in state["fetched"].items():
         print(f"  - {post['title']}: {url}")
+    if state.get("truncated"):
+        print("WARNING: the model hit its output limit, so the brief is cut off. Re-run it.")
+        return 3
     if state["uncited_urls"]:
         print("WARNING: the brief cites URLs that were never read:")
         for url in state["uncited_urls"]:

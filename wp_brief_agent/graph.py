@@ -75,6 +75,7 @@ class BriefState(TypedDict, total=False):
     brief: str
     uncited_urls: list[str]
     design: dict
+    truncated: bool
 
 
 def _norm(url: str) -> str:
@@ -155,7 +156,9 @@ def build_graph(
                 name=design.get("name", ""), sections=json.dumps(outline, indent=1)
             )
         brief = llm.stream_text(WRITE_SYSTEM, prompt, emit)
-        return {"brief": brief, "stopped_reason": stopped}
+        # A brief cut off by the output limit can still pass the URL check, so flag it separately.
+        truncated = getattr(llm, "last_stop_reason", "") in ("max_tokens", "length")
+        return {"brief": brief, "stopped_reason": stopped, "truncated": truncated}
 
     def check(state: BriefState) -> BriefState:
         return {"uncited_urls": find_uncited_urls(state["brief"], state.get("fetched", {}))}

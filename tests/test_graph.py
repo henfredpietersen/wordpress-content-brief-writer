@@ -1,6 +1,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from wp_brief_agent.graph import find_uncited_urls, run
 from wp_brief_agent.llm import (
     AnthropicLLM,
@@ -91,6 +93,9 @@ class FakeStream:
 
     def get_final_text(self):
         return "Hello brief"
+
+    def get_final_message(self):
+        return SimpleNamespace(stop_reason="end_turn")
 
 
 class FakeMessages:
@@ -235,3 +240,35 @@ def test_make_llm_picks_provider(monkeypatch):
 
     with pytest.raises(ValueError):
         make_llm("nope")
+
+
+# --- A brief cut off by the output limit must be flagged, not passed as complete --------
+
+
+class CutOffLLM(ScriptedLLM):
+    def __init__(self, reason):
+        super().__init__()
+        self.reason = reason
+
+    def stream_text(self, system, prompt, on_token):
+        text = super().stream_text(system, prompt, on_token)
+        self.last_stop_reason = self.reason
+        return text[: len(text) // 2]
+
+
+@pytest.mark.parametrize("reason", ["max_tokens", "length"])
+def test_truncated_brief_is_flagged(reason):
+    state = run("cold brew", WP.site, CutOffLLM(reason), WP)
+    assert state["truncated"] is True
+
+
+def test_complete_brief_is_not_flagged():
+    state = run("cold brew", WP.site, CutOffLLM("end_turn"), WP)
+    assert state["truncated"] is False
+
+
+def test_anthropic_wrapper_records_why_the_stream_stopped():
+    fake = SimpleNamespace(messages=FakeMessages())
+    llm = AnthropicLLM(model="m", client=fake)
+    llm.stream_text("sys", "prompt", lambda t: None)
+    assert llm.last_stop_reason == "end_turn"

@@ -79,6 +79,7 @@ def _summary(state: dict) -> dict:
         "uncited_urls": state["uncited_urls"],
         "research_turns": state["steps"],
         "stopped_reason": state["stopped_reason"],
+        "truncated": bool(state.get("truncated")),
     }
 
 
