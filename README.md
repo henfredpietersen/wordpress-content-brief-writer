@@ -26,7 +26,7 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 
 ## Where things stand
 
-- It works, and it has been tested. There is an automated test suite of 48 tests, and the live version was checked end to end on 13 October 2026.
+- It works, and it has been tested. There is an automated test suite of 65 tests, and the live version was checked end to end on 13 October 2026.
 - The Google Sheet add-on was run for real on 25 October 2026: a topic typed into the Sheet came back as a finished Google Doc, marked as grounded.
 - It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
 - It was also tested with Claude (`claude-sonnet-5-5`) on 26 October 2026: right post read in all 6 cases, no invented sources in all 7, and it finished every run on its own, in fewer steps than Groq.
@@ -183,9 +183,21 @@ context only: the prompt forbids taking facts or URLs from it, so the grounding 
 unchanged. Tests use a recorded Figma-shaped file (`fixtures/figma_landing.json`), so no token is
 needed for CI.
 
+**Run live on 26 Oct 2026** (Claude `claude-sonnet-5-5`, a real Figma file, wordpress.org/news):
+- The Figma API read worked first time: 7 frames with text from the "Figma basics" file.
+- Claude read 3 real posts, the brief passed the grounding check, and the "Fit with the design"
+  section said plainly that this practice file (a food-shop layout) is not an article template,
+  marking each outline heading "new section" rather than forcing a fit.
+- **The first attempt exposed a bug:** the brief stopped mid-section but still passed the URL
+  check, because nothing looked at why the model stopped. Both wrappers now record the stop
+  reason, a cut-off brief is flagged (`truncated`; the CLI exits 3), and the output limit was
+  raised from 2,000 to 4,000 tokens. The rerun was complete.
+- Reading outview.co.za from a Codespace failed at the connection level (the site refuses cloud
+  servers), so the agent found no posts there and said so instead of inventing any.
+
 ### What was tested
 
-**Unit and integration tests** (`pytest`, 61 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 65 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.
