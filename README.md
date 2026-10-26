@@ -26,10 +26,11 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 
 ## Where things stand
 
-- It works, and it has been tested. There is an automated test suite of 65 tests, and the live version was checked end to end on 13 October 2026.
+- It works, and it has been tested. There is an automated test suite of 67 tests, and the live version was checked end to end on 13 October 2026.
 - The Google Sheet add-on was run for real on 25 October 2026: a topic typed into the Sheet came back as a finished Google Doc, marked as grounded.
 - It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
 - It was also tested with Claude (`claude-sonnet-5-5`) on 26 October 2026: right post read in all 6 cases, no invented sources in all 7, and it finished every run on its own, in fewer steps than Groq.
+- It was run on a real agency blog, blacksmith.agency (218 posts), on 26 October 2026, with the topic "using AI to improve website conversions". The first two runs read nothing, which exposed two real bugs: search results came back newest-first instead of most relevant, and the site's firewall (Cloudflare) blocked the default Python user agent. Worse, the tool still reported a pass. All three are fixed: it now ranks by relevance, sends an honest named user agent (it does not pretend to be a browser), and fails with a warning when no posts were read. The rerun read 2 relevant posts and passed the grounding check. The unedited brief is in [`examples/blacksmith-ai-conversions.md`](examples/blacksmith-ai-conversions.md). One fact was spot-checked against the source post and matched, though the brief dropped the post's "up to" in "up to 20-30%".
 - Only 7 test cases were run, on a fictional site. That is a quick health check, not a proper benchmark.
 - It only reads blog posts, not other kinds of pages such as products.
 
@@ -197,7 +198,7 @@ needed for CI.
 
 ### What was tested
 
-**Unit and integration tests** (`pytest`, 65 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 67 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.
