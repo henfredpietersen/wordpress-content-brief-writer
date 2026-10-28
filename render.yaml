@@ -23,3 +23,12 @@ services:
         sync: false
       - key: LIVE_REQUESTS_PER_HOUR
         value: "30"
+      # Public "try it" box on the Outview case-study page (see README). 0 switches it off.
+      - key: PUBLIC_RUNS_PER_DAY
+        value: "50"
+      - key: PUBLIC_PER_IP_PER_HOUR
+        value: "3"
+      - key: PUBLIC_PROVIDER
+        value: groq
+      - key: PUBLIC_ORIGINS
+        value: https://outview.co.za,https://www.outview.co.za

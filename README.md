@@ -26,7 +26,7 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 
 ## Where things stand
 
-- It works, and it has been tested. There is an automated test suite of 67 tests, and the live version was checked end to end on 13 October 2026.
+- It works, and it has been tested. There is an automated test suite of 77 tests, and the live version was checked end to end on 13 October 2026.
 - The Google Sheet add-on was run for real on 25 October 2026: a topic typed into the Sheet came back as a finished Google Doc, marked as grounded.
 - It was tested with a real AI model (Groq's `gpt-oss-120b`) on a made-up example site. The AI found the right post to read in all 6 cases where the site had one, and did not invent sources.
 - It was also tested with Claude (`claude-sonnet-5-5`) on 26 October 2026: right post read in all 6 cases, no invented sources in all 7, and it finished every run on its own, in fewer steps than Groq.
@@ -137,11 +137,28 @@ The same agent runs as a small FastAPI service (`wp_brief_agent/api.py`):
 | `GET /demo?topic=…` | public, free | Scripted stand-in on the fictional site: shows the flow at no cost |
 | `POST /brief` | bearer token | Live model; returns the brief, the posts read and the grounding result as JSON |
 | `POST /brief/stream` | bearer token | Same, streamed as server-sent events (`token` events, then `done`) |
+| `GET /try/status` | public | Is the visitor "try it" route on, and how many runs are left today |
+| `POST /try/stream` | public, capped | A live run on any public WordPress site, for the case-study page: `search` and `read` events while it researches, `token` events while it writes, then `done` |
 | `GET /docs` | public | Interactive API docs |
 
 Live routes spend model quota, so they are off unless `API_TOKEN` is set, they compare the
 token in constant time, they cap live calls per hour (`LIVE_REQUESTS_PER_HOUR`, default 30), and
 `site_url` must be a public `https://` domain, not localhost, a private name or an IP address.
+
+**The public "try it" route** powers the box on the
+[case-study page](https://outview.co.za/case-study-content-brief/). A web page can't keep a
+token secret, so this route has no token and is boxed in another way:
+- off unless `PUBLIC_RUNS_PER_DAY` is set above 0 (`render.yaml` sets 50);
+- one fixed provider, `PUBLIC_PROVIDER` (default `groq`), so visitors can't pick an expensive model;
+- browser requests only from `PUBLIC_ORIGINS` (default the two outview.co.za addresses), enforced by CORS and by a server-side `Origin` check;
+- `PUBLIC_PER_IP_PER_HOUR` runs per visitor (default 3), and the daily total across everyone;
+- its own budget, separate from the token routes, so visitors can't use up the owner's hourly cap;
+- the same `https`-only, no-IP, no-localhost check on `site_url`, and the same 6-turn research limit.
+
+Honest limits: the `Origin` check stops other websites embedding the box, not someone calling the
+API directly with a forged header, and the per-visitor count trusts the first `X-Forwarded-For`
+entry, which a determined caller can change. The daily total is the hard stop on spend. Counters
+live in memory, so a restart (or a free-plan sleep) resets them.
 
 Run locally: `uvicorn wp_brief_agent.api:app --reload`, then open `http://127.0.0.1:8000/docs`.
 
@@ -198,13 +215,13 @@ needed for CI.
 
 ### What was tested
 
-**Unit and integration tests** (`pytest`, 67 tests, no key or network needed):
+**Unit and integration tests** (`pytest`, 77 tests, no key or network needed):
 - WordPress client: HTML and entity cleanup, the REST request it sends (via a mocked HTTP transport), 404 handling.
 - Tools: reading a post is recorded, searching is not, and bad input returns an error to the model instead of crashing.
 - Graph: a full offline run; the grounding check catches an invented URL; a model that never stops calling tools is cut off at the step limit.
 - Anthropic wrapper (fake client): tools are sent, `tool_use` blocks are parsed, streamed tokens arrive in order.
 - OpenAI-compatible wrapper (fake client): history and tools are translated correctly, tool calls are parsed, malformed arguments don't crash, streaming works, and a full graph run completes through it.
-- Web API: the public demo works and is grounded; live routes are closed without a configured token, reject a missing or wrong token, enforce the hourly cap, report a missing provider key, refuse non-public `site_url`s, and the stream sends token events that add up to the final brief. The docs page declares the token as a bearer login (a plain `Authorization` header parameter is silently dropped by Swagger UI), and its example body is a valid request.
+- Web API: the public demo works and is grounded; live routes are closed without a configured token, reject a missing or wrong token, enforce the hourly cap, report a missing provider key, refuse non-public `site_url`s, and the stream sends token events that add up to the final brief. The public `/try` route is off by default, rejects other origins and private sites, sends search and read events before the brief, enforces the per-visitor and daily caps, doesn't touch the token routes' budget, answers CORS preflight for Outview only, and turns site errors (403, 404) into plain reasons. The docs page declares the token as a bearer login (a plain `Authorization` header parameter is silently dropped by Swagger UI), and its example body is a valid request.
 
 **Eval** (`eval/run_eval.py`, 7 cases on the fixture site) measures retrieval (did it read the post a good researcher would read), grounding (only cites what it read) and whether the model stopped on its own.
 
