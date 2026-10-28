@@ -1,0 +1,491 @@
+{
+ "cases": [
+  {
+   "brief": "## Working title\nChoosing a burr grinder for home espresso\n## Existing posts to link\n- How to Choose a Coffee Grinder: https://demo-roastery.test/how-to-choose-a-coffee-grinder/\n- Espresso at Home: What You Actually Need: https://demo-roastery.test/espresso-at-home/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 101,
+   "hit": true,
+   "read_ids": [
+    101,
+    104
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "choosing a burr grinder for home espresso",
+     "results": [
+      {
+       "id": 101,
+       "title": "How to Choose a Coffee Grinder"
+      },
+      {
+       "id": 104,
+       "title": "Espresso at Home: What You Actually Need"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 101,
+     "title": "How to Choose a Coffee Grinder",
+     "url": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/"
+    },
+    {
+     "kind": "read",
+     "post_id": 104,
+     "title": "Espresso at Home: What You Actually Need",
+     "url": "https://demo-roastery.test/espresso-at-home/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "choosing a burr grinder for home espresso",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nHow to brew pour-over coffee\n## Existing posts to link\n- Pour-Over Brew Guide: https://demo-roastery.test/pour-over-brew-guide/\n- How to Choose a Coffee Grinder: https://demo-roastery.test/how-to-choose-a-coffee-grinder/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 102,
+   "hit": true,
+   "read_ids": [
+    101,
+    102
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "how to brew pour-over coffee",
+     "results": [
+      {
+       "id": 102,
+       "title": "Pour-Over Brew Guide"
+      },
+      {
+       "id": 101,
+       "title": "How to Choose a Coffee Grinder"
+      },
+      {
+       "id": 107,
+       "title": "Cold Brew Recipe for Summer"
+      },
+      {
+       "id": 103,
+       "title": "Storing Coffee Beans So They Stay Fresh"
+      },
+      {
+       "id": 106,
+       "title": "Coffee Subscription FAQ"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 102,
+     "title": "Pour-Over Brew Guide",
+     "url": "https://demo-roastery.test/pour-over-brew-guide/"
+    },
+    {
+     "kind": "read",
+     "post_id": 101,
+     "title": "How to Choose a Coffee Grinder",
+     "url": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "how to brew pour-over coffee",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nKeeping coffee beans fresh\n## Existing posts to link\n- Storing Coffee Beans So They Stay Fresh: https://demo-roastery.test/storing-coffee-beans/\n- How to Choose a Coffee Grinder: https://demo-roastery.test/how-to-choose-a-coffee-grinder/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 103,
+   "hit": true,
+   "read_ids": [
+    101,
+    103
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "keeping coffee beans fresh",
+     "results": [
+      {
+       "id": 103,
+       "title": "Storing Coffee Beans So They Stay Fresh"
+      },
+      {
+       "id": 101,
+       "title": "How to Choose a Coffee Grinder"
+      },
+      {
+       "id": 106,
+       "title": "Coffee Subscription FAQ"
+      },
+      {
+       "id": 102,
+       "title": "Pour-Over Brew Guide"
+      },
+      {
+       "id": 105,
+       "title": "Single Origin vs Blend"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 103,
+     "title": "Storing Coffee Beans So They Stay Fresh",
+     "url": "https://demo-roastery.test/storing-coffee-beans/"
+    },
+    {
+     "kind": "read",
+     "post_id": 101,
+     "title": "How to Choose a Coffee Grinder",
+     "url": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "keeping coffee beans fresh",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nMaking cold brew at home\n## Existing posts to link\n- Cold Brew Recipe for Summer: https://demo-roastery.test/cold-brew-recipe/\n- Espresso at Home: What You Actually Need: https://demo-roastery.test/espresso-at-home/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 107,
+   "hit": true,
+   "read_ids": [
+    104,
+    107
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "making cold brew at home",
+     "results": [
+      {
+       "id": 107,
+       "title": "Cold Brew Recipe for Summer"
+      },
+      {
+       "id": 104,
+       "title": "Espresso at Home: What You Actually Need"
+      },
+      {
+       "id": 102,
+       "title": "Pour-Over Brew Guide"
+      },
+      {
+       "id": 101,
+       "title": "How to Choose a Coffee Grinder"
+      },
+      {
+       "id": 103,
+       "title": "Storing Coffee Beans So They Stay Fresh"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 107,
+     "title": "Cold Brew Recipe for Summer",
+     "url": "https://demo-roastery.test/cold-brew-recipe/"
+    },
+    {
+     "kind": "read",
+     "post_id": 104,
+     "title": "Espresso at Home: What You Actually Need",
+     "url": "https://demo-roastery.test/espresso-at-home/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "making cold brew at home",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nLight vs dark roast\n## Existing posts to link\n- Roast Levels Explained: https://demo-roastery.test/roast-levels-explained/\n- Single Origin vs Blend: https://demo-roastery.test/single-origin-vs-blend/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 108,
+   "hit": true,
+   "read_ids": [
+    105,
+    108
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "light vs dark roast",
+     "results": [
+      {
+       "id": 108,
+       "title": "Roast Levels Explained"
+      },
+      {
+       "id": 105,
+       "title": "Single Origin vs Blend"
+      },
+      {
+       "id": 103,
+       "title": "Storing Coffee Beans So They Stay Fresh"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 108,
+     "title": "Roast Levels Explained",
+     "url": "https://demo-roastery.test/roast-levels-explained/"
+    },
+    {
+     "kind": "read",
+     "post_id": 105,
+     "title": "Single Origin vs Blend",
+     "url": "https://demo-roastery.test/single-origin-vs-blend/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "light vs dark roast",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nPausing a coffee subscription\n## Existing posts to link\n- Coffee Subscription FAQ: https://demo-roastery.test/subscription-faq/\n- How to Choose a Coffee Grinder: https://demo-roastery.test/how-to-choose-a-coffee-grinder/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": 106,
+   "hit": true,
+   "read_ids": [
+    101,
+    106
+   ],
+   "research_turns": 4,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "pausing a coffee subscription",
+     "results": [
+      {
+       "id": 106,
+       "title": "Coffee Subscription FAQ"
+      },
+      {
+       "id": 101,
+       "title": "How to Choose a Coffee Grinder"
+      },
+      {
+       "id": 103,
+       "title": "Storing Coffee Beans So They Stay Fresh"
+      },
+      {
+       "id": 102,
+       "title": "Pour-Over Brew Guide"
+      },
+      {
+       "id": 105,
+       "title": "Single Origin vs Blend"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 106,
+     "title": "Coffee Subscription FAQ",
+     "url": "https://demo-roastery.test/subscription-faq/"
+    },
+    {
+     "kind": "read",
+     "post_id": 101,
+     "title": "How to Choose a Coffee Grinder",
+     "url": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "pausing a coffee subscription",
+   "uncited": []
+  },
+  {
+   "brief": "## Working title\nMatcha latte recipe\n## Existing posts to link\n- Cold Brew Recipe for Summer: https://demo-roastery.test/cold-brew-recipe/\n## Outline\n- Introduction\n- Main points\n- Next steps\n",
+   "expect_read": null,
+   "hit": null,
+   "read_ids": [
+    107
+   ],
+   "research_turns": 3,
+   "steps": [
+    {
+     "kind": "search",
+     "query": "matcha latte recipe",
+     "results": [
+      {
+       "id": 107,
+       "title": "Cold Brew Recipe for Summer"
+      }
+     ]
+    },
+    {
+     "kind": "read",
+     "post_id": 107,
+     "title": "Cold Brew Recipe for Summer",
+     "url": "https://demo-roastery.test/cold-brew-recipe/"
+    },
+    {
+     "kind": "done",
+     "text": "Research done."
+    }
+   ],
+   "stopped_reason": "model_finished",
+   "topic": "matcha latte recipe",
+   "uncited": []
+  }
+ ],
+ "example": {
+  "facts_count": 8,
+  "links": [
+   {
+    "title": "9 AI Personalization Tactics for eCommerce",
+    "url": "https://blacksmith.agency/resources/ecommerce/ai-personalization-tactics-for-ecommerce/"
+   },
+   {
+    "title": "Top 9 AI SEO Trends to Watch in 2026",
+    "url": "https://blacksmith.agency/resources/digital-marketing/ai-seo-trends/"
+   }
+  ],
+  "outline": [
+   "1. Why AI is a game‑changer for conversions",
+   "2. Predictive product (or content) recommendations",
+   "3. Dynamic homepage & landing page experiences",
+   "4. AI‑enhanced search and behavioral targeting",
+   "5. Personalised email and post‑purchase flows",
+   "6. Conversational AI – chatbots and virtual assistants",
+   "7. AI‑driven SEO & user‑experience signals",
+   "8. Measuring AI‑powered conversion lifts",
+   "9. Quick start checklist"
+  ],
+  "run_note": "Live run, 26 Oct 2026: python -m wp_brief_agent \"using AI to improve website conversions\" --site https://blacksmith.agency --provider groq. Output below is unedited.",
+  "title": "How to Use AI to Boost Your Website’s Conversion Rate"
+ },
+ "grounding": [
+  {
+   "added": "",
+   "label": "As written",
+   "uncited": []
+  },
+  {
+   "added": "- Further reading: https://demo-roastery.test/iced-coffee-guide/",
+   "label": "A made-up link added",
+   "uncited": [
+    "https://demo-roastery.test/iced-coffee-guide"
+   ]
+  },
+  {
+   "added": "Source: 【https://demo-roastery.test/cold-brew-recipe/】",
+   "label": "A real link in a full-width bracket, the style that caused a false alarm",
+   "uncited": []
+  },
+  {
+   "added": "[Read more](https://demo-roastery.test/cold-brew-recipe/)",
+   "label": "A real link written as a markdown link",
+   "uncited": []
+  },
+  {
+   "added": "- See also: https://demo-roastery.test/how-to-choose-a-coffee-grinder/",
+   "label": "A link to a real post on the site that the agent never opened",
+   "uncited": [
+    "https://demo-roastery.test/how-to-choose-a-coffee-grinder"
+   ]
+  }
+ ],
+ "live_table": [
+  {
+   "finished": "1.00",
+   "grounded": "1.00",
+   "retrieval": "1.00",
+   "run": "Offline (scripted stand-in)",
+   "turns": "3.86"
+  },
+  {
+   "finished": "0.57 (4/7)",
+   "grounded": "0.86 (6/7)*",
+   "retrieval": "1.00 (6/6)",
+   "run": "Live: Groq openai/gpt-oss-120b, run 1 (13 Oct 2026)",
+   "turns": "5.29"
+  },
+  {
+   "finished": "0.43 (3/7)",
+   "grounded": "1.00 (7/7)",
+   "retrieval": "1.00 (6/6)",
+   "run": "Live: Groq openai/gpt-oss-120b, run 2, after checker fix",
+   "turns": "5.71"
+  },
+  {
+   "finished": "1.00 (7/7)",
+   "grounded": "1.00 (7/7)",
+   "retrieval": "1.00 (6/6)",
+   "run": "Live: Claude claude-sonnet-5-5 (26 Oct 2026)",
+   "turns": "3.14"
+  }
+ ],
+ "posts": [
+  {
+   "id": 101,
+   "title": "How to Choose a Coffee Grinder",
+   "url": "https://demo-roastery.test/how-to-choose-a-coffee-grinder/"
+  },
+  {
+   "id": 102,
+   "title": "Pour-Over Brew Guide",
+   "url": "https://demo-roastery.test/pour-over-brew-guide/"
+  },
+  {
+   "id": 103,
+   "title": "Storing Coffee Beans So They Stay Fresh",
+   "url": "https://demo-roastery.test/storing-coffee-beans/"
+  },
+  {
+   "id": 104,
+   "title": "Espresso at Home: What You Actually Need",
+   "url": "https://demo-roastery.test/espresso-at-home/"
+  },
+  {
+   "id": 105,
+   "title": "Single Origin vs Blend",
+   "url": "https://demo-roastery.test/single-origin-vs-blend/"
+  },
+  {
+   "id": 106,
+   "title": "Coffee Subscription FAQ",
+   "url": "https://demo-roastery.test/subscription-faq/"
+  },
+  {
+   "id": 107,
+   "title": "Cold Brew Recipe for Summer",
+   "url": "https://demo-roastery.test/cold-brew-recipe/"
+  },
+  {
+   "id": 108,
+   "title": "Roast Levels Explained",
+   "url": "https://demo-roastery.test/roast-levels-explained/"
+  }
+ ],
+ "site": "https://demo-roastery.test",
+ "test_count": 67
+}
