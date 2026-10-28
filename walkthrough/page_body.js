@@ -40,9 +40,106 @@
     ".msg{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.88rem;background:var(--panel2);border:1px solid var(--line)}",
     ".msg.bad{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.45)}",
     ".fine{font-size:.78rem;color:var(--dim);margin:12px 0 0}",
+    ".md{background:#0b0f19;border:1px solid var(--line);border-radius:12px;padding:16px 18px;color:#d6dbe6;font-size:.92rem;line-height:1.6;overflow-wrap:anywhere}",
+    ".md.scroll{max-height:520px;overflow:auto}",
+    ".md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}",
+    ".md h3{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin:20px 0 8px;font-weight:800}",
+    ".md h3:first-child{margin-top:0}",
+    ".md h4{font-size:.95rem;color:var(--text);margin:14px 0 6px}",
+    ".md p{margin:0 0 10px}.md strong{color:var(--text)}",
+    ".md .title{font-size:1.15rem;line-height:1.35;font-weight:800;color:var(--text);margin:0 0 10px}",
+    ".md ul,.md ol{margin:0 0 10px;padding-left:20px}.md li{margin:4px 0}",
+    ".md a{color:var(--cyan);text-decoration:underline;text-underline-offset:2px}",
+    ".md code{font:12.5px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px}",
+    ".md .tw{overflow-x:auto;margin:0 0 12px;border:1px solid var(--line);border-radius:10px}",
+    ".md table{border-collapse:collapse;width:100%;font-size:.86rem}",
+    ".md th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);background:rgba(255,255,255,.04);padding:8px 12px}",
+    ".md th,.md td{white-space:normal;border-bottom:0}",
+    ".md th{position:static}",
+    ".md td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top;color:#d6dbe6}",
+    ".md hr{border:0;border-top:1px solid var(--line);margin:16px 0}.md em{color:var(--dim)}",
+    ".md td:first-child{color:var(--text);font-weight:600;min-width:150px}",
+    ".mdbar{display:flex;gap:8px;justify-content:flex-end;margin:10px 0 0}",
+    ".mdbar button{font-size:.78rem;padding:6px 10px}",
+    "@media (max-width:520px){.md{padding:12px}.md table,.md thead,.md tbody,.md tr,.md td{display:block}.md thead{display:none}",
+    ".md tr{border-top:1px solid var(--line);padding:8px 10px}.md tr:first-child{border-top:0}.md td{border:0;padding:2px 0}.md td:first-child{min-width:0}}",
     "@media (max-width:520px){.mrow{grid-template-columns:110px 1fr 62px}}",
     "@media (max-width:720px){.form{grid-template-columns:1fr}.form .btn{width:100%}}"
   ].join("\n");
+
+  // Small, safe markdown renderer for the briefs: escapes everything first, then adds
+  // headings, tables, lists, bold, code and http(s) links. No raw HTML gets through.
+  function inline(t) {
+    t = esc(t);
+    t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\*)/g, "$1<em>$2</em>");
+    t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "<a href='$2' target='_blank' rel='noopener nofollow'>$1</a>");
+    t = t.replace(/(^|[\s(【])(https?:\/\/[^\s<)】]+)/g, function (m, pre, url) {
+      var clean = url.replace(/[.,;:]+$/, ""), tail = url.slice(clean.length);
+      return pre + "<a href='" + clean + "' target='_blank' rel='noopener nofollow' title='" + clean + "'>" + shortUrl(clean) + "</a>" + tail;
+    });
+    return t;
+  }
+  function shortUrl(u) {
+    var bare = u.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (bare.length <= 42) return bare;
+    var parts = bare.split("/");
+    return parts[0] + "/…/" + parts[parts.length - 1];
+  }
+  function cells(line) {
+    return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(function (c) { return c.trim(); });
+  }
+  function md(text) {
+    var lines = String(text || "").replace(/\r/g, "").split("\n"), out = [], i = 0, list = null, para = [];
+    function flushPara() { if (para.length) { out.push("<p>" + para.map(inline).join("<br>") + "</p>"); para = []; } }
+    function flushList() { if (list) { out.push("</" + list + ">"); list = null; } }
+    var lastHead = "";
+    while (i < lines.length) {
+      var ln = lines[i].replace(/\s+$/, ""), m;
+      if (!ln.trim()) { flushPara(); flushList(); i++; continue; }
+      if (/^\s*\|/.test(ln)) {
+        flushPara(); flushList();
+        var rows = [];
+        while (i < lines.length && /^\s*\|/.test(lines[i])) { rows.push(lines[i]); i++; }
+        var head = cells(rows[0]), body = rows.slice(1).filter(function (r) { return !/^\s*\|?[\s:|-]+\|?\s*$/.test(r); }).map(cells);
+        // Pad short rows, then drop any column the model left empty in every row.
+        body = body.map(function (r) { while (r.length < head.length) r.push(""); return r; });
+        var keep = head.map(function (h, k) { return !body.length || body.some(function (r) { return r[k]; }); });
+        head = head.filter(function (h, k) { return keep[k]; });
+        body = body.map(function (r) { return r.filter(function (c, k) { return keep[k] !== false; }); });
+        out.push("<div class='tw'><table><thead><tr>" + head.map(function (c) { return "<th>" + inline(c) + "</th>"; }).join("") +
+          "</tr></thead><tbody>" + body.map(function (r) {
+            return "<tr>" + r.map(function (c) { return "<td>" + inline(c) + "</td>"; }).join("") + "</tr>";
+          }).join("") + "</tbody></table></div>");
+        continue;
+      }
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(ln)) { flushPara(); flushList(); out.push("<hr>"); i++; continue; }
+      if ((m = ln.match(/^(#{1,6})\s+(.*)$/))) {
+        flushPara(); flushList();
+        var level = m[1].length, txt = m[2].replace(/\s*#+$/, "");
+        lastHead = txt.toLowerCase();
+        out.push(level <= 2 ? "<h3>" + inline(txt) + "</h3>" : "<h4>" + inline(txt) + "</h4>");
+        i++; continue;
+      }
+      if ((m = ln.match(/^\s*([-*+]|\d+[.)])\s+(.*)$/))) {
+        flushPara();
+        var kind = /\d/.test(m[1]) ? "ol" : "ul";
+        if (list !== kind) { flushList(); out.push("<" + kind + ">"); list = kind; }
+        out.push("<li>" + inline(m[2]) + "</li>");
+        i++; continue;
+      }
+      flushList();
+      // The line right under "Working title" is the title itself: show it large.
+      if (lastHead.indexOf("title") >= 0 && !para.length && out[out.length - 1].indexOf("<h3>") === 0) {
+        out.push("<p class='title'>" + inline(ln.replace(/^\*\*(.*)\*\*$/, "$1")) + "</p>");
+        lastHead = ""; i++; continue;
+      }
+      para.push(ln); i++;
+    }
+    flushPara(); flushList();
+    return out.join("");
+  }
 
   var REPO = "https://github.com/henfredpietersen/wordpress-content-brief-writer";
   var EXAMPLE = REPO + "/blob/main/examples/blacksmith-ai-conversions.md";
@@ -93,7 +190,7 @@
     }
     if (e.t === "write") {
       return "<div class='ev'><div class='ic' style='background:rgba(255,122,69,.15);color:var(--orange)'>W</div><div><b>Write the brief</b> <span>from the " +
-        c.read_ids.length + (c.read_ids.length === 1 ? " post" : " posts") + " it read, and nothing else</span><pre class='brief' style='margin-top:8px'>" + esc(c.brief) + "</pre></div></div>";
+        c.read_ids.length + (c.read_ids.length === 1 ? " post" : " posts") + " it read, and nothing else</span><div class='md' style='margin-top:8px'>" + md(c.brief) + "</div></div></div>";
     }
     var ok = c.uncited.length === 0;
     return "<div class='ev'><div class='ic' style='background:" + (ok ? "rgba(52,211,153,.15);color:var(--ok)" : "rgba(248,113,113,.15);color:var(--bad)") +
@@ -189,7 +286,22 @@
         "</b> <span>" + (d.error ? esc(d.error) : d.title ? "“" + esc(d.title) + "”" : "not found") + "</span></div></div>");
     }
   }
+  var rawBrief = "", briefQueued = false;
+  function drawBrief() {
+    briefQueued = false;
+    var box = $("[data-tbrief]");
+    var atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    box.style.display = "block";
+    box.innerHTML = md(rawBrief);
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  }
+  function scheduleBrief() {
+    if (briefQueued) return;
+    briefQueued = true;
+    (window.requestAnimationFrame || setTimeout)(drawBrief, 60);
+  }
   function finish(d) {
+    if (d.brief) { rawBrief = d.brief; drawBrief(); $("[data-tbrief]").classList.remove("scroll"); $("[data-tcopy]").style.display = "flex"; }
     var posts = d.posts_read || [];
     var h = "";
     if (!posts.length) {
@@ -224,8 +336,10 @@
     $("[data-trun]").textContent = "Running…";
     $("[data-tlog]").innerHTML = "";
     $("[data-tresult]").innerHTML = "";
-    $("[data-tbrief]").textContent = "";
+    rawBrief = "";
+    $("[data-tbrief]").innerHTML = "";
     $("[data-tbrief]").style.display = "none";
+    $("[data-tcopy]").style.display = "none";
     $("[data-tout]").style.display = "block";
     var gotDone = false;
     fetch(API + "/try/stream", {
@@ -253,10 +367,8 @@
             if (!m) return;
             var data = JSON.parse(m[2]);
             if (m[1] === "token") {
-              var pre = $("[data-tbrief]");
-              pre.style.display = "block";
-              pre.textContent += data;
-              pre.scrollTop = pre.scrollHeight;
+              rawBrief += data;
+              scheduleBrief();
             } else if (m[1] === "done") { gotDone = true; finish(data); }
             else if (m[1] === "error") { gotDone = true; fail(data.error || "The run stopped."); }
             else liveEvent(m[1], data);
@@ -299,7 +411,8 @@
     "<button class='btn' data-trun type='submit' disabled>Run it live</button></form>" +
     "<div class='status' data-tstatus></div>" +
     "<div data-tout style='display:none'><div class='log' data-tlog></div>" +
-    "<pre class='brief' data-tbrief style='display:none;margin-top:10px;max-height:420px'></pre><div data-tresult></div></div>" +
+    "<div class='md scroll' data-tbrief style='display:none;margin-top:10px'></div>" +
+    "<div class='mdbar' data-tcopy style='display:none'><button class='ghost' type='button' data-tcopybtn>Copy as Markdown</button></div><div data-tresult></div></div>" +
     "<p class='fine'>Runs on Groq <code>openai/gpt-oss-120b</code>. It only reads public posts through the site's standard WordPress API and never writes anything. " +
     "Nothing you enter is stored, but the site address and topic are sent to the model provider, so don't enter anything private. " +
     "A run takes about 20 to 60 seconds. Runs are capped per visitor and per day to keep costs fixed.</p></div></section>";
@@ -372,6 +485,12 @@
 
   // ------------------------------------------------------------- behaviour
   $("[data-tform]").addEventListener("submit", runLive);
+  $("[data-tcopybtn]").addEventListener("click", function () {
+    var b = $("[data-tcopybtn]");
+    function done(ok) { b.textContent = ok ? "Copied" : "Copy failed"; setTimeout(function () { b.textContent = "Copy as Markdown"; }, 1800); }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(rawBrief).then(function () { done(true); }, function () { done(false); });
+    else done(false);
+  });
   loadStatus();
 
   function total() { return events(D.cases[cIdx]).length; }
