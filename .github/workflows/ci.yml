@@ -22,6 +22,11 @@ jobs:
         run: python eval/run_eval.py
       - name: CLI smoke test
         run: python -m wp_brief_agent "cold brew" --offline
+      - name: Walkthrough matches the code
+        run: |
+          python walkthrough/export.py
+          python walkthrough/build.py
+          git diff --exit-code walkthrough/data.json docs/walkthrough.js
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
