@@ -28,7 +28,20 @@
     ".where{padding:14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}",
     ".where h3{margin:0 0 6px;font-size:.95rem}.where p{font-size:.86rem;margin:0}",
     "ol.outl{margin:8px 0 0;padding-left:20px;color:var(--text);font-size:.88rem}ol.outl li{margin:3px 0}",
-    "@media (max-width:520px){.mrow{grid-template-columns:110px 1fr 62px}}"
+    ".try{border:1px solid rgba(255,122,69,.45);background:linear-gradient(180deg,rgba(255,122,69,.08),rgba(255,255,255,.03))}",
+    ".form{display:grid;gap:10px;grid-template-columns:1fr 1fr auto;align-items:end}",
+    ".form label{display:grid;gap:5px;font-size:.8rem;color:var(--dim)}",
+    ".form input{font:inherit;font-size:.95rem;color:var(--text);background:#0b0f19;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}",
+    ".form input:focus{outline:2px solid rgba(79,209,255,.5);border-color:transparent}",
+    ".status{font-size:.82rem;color:var(--dim);margin-top:10px;display:flex;gap:8px;align-items:baseline}",
+    ".dot{width:8px;height:8px;border-radius:50%;background:var(--dim);display:inline-block;flex:none}",
+    ".dot.on{background:var(--ok)}.dot.wait{background:var(--warn);animation:pulse 1s infinite}.dot.off{background:var(--bad)}",
+    "@keyframes pulse{50%{opacity:.3}}",
+    ".msg{margin-top:12px;padding:12px 14px;border-radius:12px;font-size:.88rem;background:var(--panel2);border:1px solid var(--line)}",
+    ".msg.bad{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.45)}",
+    ".fine{font-size:.78rem;color:var(--dim);margin:12px 0 0}",
+    "@media (max-width:520px){.mrow{grid-template-columns:110px 1fr 62px}}",
+    "@media (max-width:720px){.form{grid-template-columns:1fr}.form .btn{width:100%}}"
   ].join("\n");
 
   var REPO = "https://github.com/henfredpietersen/wordpress-content-brief-writer";
@@ -122,9 +135,150 @@
       "%;background:" + color + "'></div></div><span style='text-align:right;font-variant-numeric:tabular-nums'>" + esc(String(cell).replace("*", "")) + "</span></div>";
   }
 
+  // ------------------------------------------------------------- try it live
+  var API = "https://wp-brief-agent.onrender.com";
+  var tryState = { enabled: false, busy: false };
+
+  function setStatus(kind, text) {
+    $("[data-tstatus]").innerHTML = "<i class='dot " + kind + "'></i><span>" + text + "</span>";
+  }
+  function timeout(ms) {
+    if (window.AbortController) { var c = new AbortController(); setTimeout(function () { c.abort(); }, ms); return c.signal; }
+    return undefined;
+  }
+  function loadStatus(attempt) {
+    attempt = attempt || 0;
+    if (attempt === 0) setStatus("wait", "Checking the server…");
+    fetch(API + "/try/status", { signal: timeout(attempt === 0 ? 8000 : 70000) })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        tryState.enabled = s.enabled && s.runs_left_today > 0;
+        if (!s.enabled) setStatus("off", "Live runs are switched off right now. The walkthrough below still works.");
+        else if (s.runs_left_today <= 0) setStatus("off", "Today's " + s.runs_per_day + " public runs are used up. Please try again tomorrow.");
+        else setStatus("on", "Server awake · " + s.runs_left_today + " of " + s.runs_per_day + " public runs left today · " +
+          s.per_visitor_per_hour + " per visitor per hour");
+        $("[data-trun]").disabled = !tryState.enabled || tryState.busy;
+      })
+      .catch(function () {
+        if (attempt < 1) {
+          setStatus("wait", "Waking the server. It's on free hosting that sleeps when idle, so this can take up to a minute…");
+          loadStatus(attempt + 1);
+        } else {
+          setStatus("off", "Couldn't reach the server. It may be restarting; try reloading in a minute.");
+        }
+      });
+  }
+  function normSite(v) {
+    v = String(v || "").trim();
+    if (v && !/^https?:\/\//i.test(v)) v = "https://" + v;
+    return v.replace(/\/+$/, "");
+  }
+  function addLog(html) {
+    var d = document.createElement("div");
+    d.innerHTML = html;
+    $("[data-tlog]").appendChild(d.firstChild);
+  }
+  function liveEvent(kind, d) {
+    if (kind === "search") {
+      var n = (d.found || []).length;
+      addLog("<div class='ev'><div class='ic' style='background:rgba(79,209,255,.15);color:var(--cyan)'>S</div><div><b>Searched the site</b> <span>for “" +
+        esc(d.query) + "”</span><br><span>" + (d.error ? esc(d.error) : n + (n === 1 ? " result" : " results") +
+        (n ? ": " + d.found.map(esc).join(" · ") : "")) + "</span></div></div>");
+    } else if (kind === "read") {
+      addLog("<div class='ev'><div class='ic' style='background:rgba(52,211,153,.15);color:var(--ok)'>R</div><div><b>Read post " + esc(d.post_id) +
+        "</b> <span>" + (d.error ? esc(d.error) : d.title ? "“" + esc(d.title) + "”" : "not found") + "</span></div></div>");
+    }
+  }
+  function finish(d) {
+    var posts = d.posts_read || [];
+    var h = "";
+    if (!posts.length) {
+      h += "<div class='msg bad'><b>It couldn't read any posts.</b> Either the site isn't WordPress, its public posts API is switched off, " +
+        "a firewall blocked the request, or nothing matched the topic. That's why the brief below has no sources, and the check marks the run as weak.</div>";
+    }
+    var ok = d.grounded && posts.length > 0;
+    h += "<div class='verdict " + (ok ? "ok" : "bad") + "'>" + (d.grounded
+      ? (posts.length ? "✓ Grounded. Every link in the brief points to one of the " + posts.length + (posts.length === 1 ? " post" : " posts") + " it read." : "No links to check: nothing was read.")
+      : "✕ Flagged. It linked to pages it never read: " + (d.uncited_urls || []).map(esc).join(", ")) + "</div>";
+    if (posts.length) {
+      h += "<p style='font-size:.84rem;margin:12px 0 4px'>Posts it read:</p>" + posts.map(function (p) {
+        return "<div style='font-size:.86rem;margin:3px 0'>· <a href='" + esc(p.url) + "' target='_blank' rel='noopener nofollow'>" + esc(p.title) + "</a></div>";
+      }).join("");
+    }
+    h += "<p class='fine'>" + esc(d.model) + " · " + esc(d.research_turns) + " research turns · " +
+      (d.stopped_reason === "step_limit" ? "stopped by the 6-turn limit, then wrote from what it had" : "stopped researching on its own") +
+      (d.truncated ? " · the brief was cut off at the length limit" : "") + "</p>";
+    $("[data-tresult]").innerHTML = h;
+  }
+  function fail(text) {
+    $("[data-tresult]").innerHTML = "<div class='msg bad'>" + esc(text) + "</div>";
+  }
+  function runLive(ev) {
+    ev.preventDefault();
+    if (tryState.busy || !tryState.enabled) return;
+    var site = normSite($("[data-tsite]").value), topic = String($("[data-ttopic]").value || "").trim();
+    if (!/^https:\/\/[^\s/]+\.[^\s]+$/i.test(site)) { fail("Enter a public website address, for example https://yourblog.com."); return; }
+    if (topic.length < 2) { fail("Enter a topic of at least two characters."); return; }
+    tryState.busy = true;
+    $("[data-trun]").disabled = true;
+    $("[data-trun]").textContent = "Running…";
+    $("[data-tlog]").innerHTML = "";
+    $("[data-tresult]").innerHTML = "";
+    $("[data-tbrief]").textContent = "";
+    $("[data-tbrief]").style.display = "none";
+    $("[data-tout]").style.display = "block";
+    var gotDone = false;
+    fetch(API + "/try/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topic: topic.slice(0, 120), site_url: site })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.json().then(function (j) {
+          var det = j && j.detail;
+          if (Array.isArray(det)) det = "Check the website address and topic.";
+          throw new Error(det || "The server said no (" + r.status + ").");
+        }, function () { throw new Error("The server said no (" + r.status + ")."); });
+      }
+      if (!r.body || !r.body.getReader) throw new Error("This browser can't show a live stream. Try a recent Chrome, Edge, Firefox or Safari.");
+      var reader = r.body.getReader(), dec = new TextDecoder(), buf = "";
+      function pump() {
+        return reader.read().then(function (chunk) {
+          if (chunk.done) return;
+          buf += dec.decode(chunk.value, { stream: true });
+          var parts = buf.split("\n\n");
+          buf = parts.pop();
+          parts.forEach(function (block) {
+            var m = block.match(/^event: (\w+)\ndata: ([\s\S]*)$/);
+            if (!m) return;
+            var data = JSON.parse(m[2]);
+            if (m[1] === "token") {
+              var pre = $("[data-tbrief]");
+              pre.style.display = "block";
+              pre.textContent += data;
+              pre.scrollTop = pre.scrollHeight;
+            } else if (m[1] === "done") { gotDone = true; finish(data); }
+            else if (m[1] === "error") { gotDone = true; fail(data.error || "The run stopped."); }
+            else liveEvent(m[1], data);
+          });
+          return pump();
+        });
+      }
+      return pump();
+    }).then(function () {
+      if (!gotDone) fail("The connection closed before the run finished. Please try again.");
+    }).catch(function (e) {
+      fail(e && e.message ? e.message : "Something went wrong. Please try again.");
+    }).then(function () {
+      tryState.busy = false;
+      $("[data-trun]").textContent = "Run it live";
+      loadStatus();
+    });
+  }
+
   // ------------------------------------------------------------- render
   var EX = D.example;
-  var steps = [["s1", "Watch it work"], ["s2", "Catch a fake source"], ["s3", "Real models"], ["s4", "A real website"], ["s5", "Where it runs"]];
+  var steps = [["try", "Try it live"], ["s1", "Watch it work"], ["s2", "Catch a fake source"], ["s3", "Real models"], ["s4", "A real website"], ["s5", "Where it runs"]];
   var html = "<style>" + CSS + "</style><div class='wt'><div class='wrap'>";
   html += "<p class='eyebrow'>Case study · AI agents</p>" +
     "<h1>An AI researcher<br><span class='grad'>that can only cite what it read.</span></h1>" +
@@ -133,8 +287,22 @@
     "<div class='tags'><span class='tag'><b>●</b> Fictional demo site + real runs</span><span class='tag'>" + D.test_count + " automated tests</span>" +
     "<span class='tag'>Built AI-assisted under my direction</span><a class='tag' href='" + REPO + "' target='_blank' rel='noopener'>Code on GitHub ↗</a></div>";
   html += "<nav class='nav' aria-label='Steps'>" + steps.map(function (s, i) {
-    return "<a href='#" + s[0] + "' data-go='" + s[0] + "'><span>" + (i + 1) + "</span>" + s[1] + "</a>";
+    return "<a href='#" + s[0] + "' data-go='" + s[0] + "'><span>" + (i ? i : "▶") + "</span>" + s[1] + "</a>";
   }).join("") + "</nav>";
+
+  html += "<section class='step' id='try'><div class='num'>▶</div><h2>Try it on any WordPress site</h2>" +
+    "<p>Enter a public WordPress website and a topic. The agent searches that site's posts, reads the ones it chooses, and writes a brief while you watch. " +
+    "This is a real model, not the scripted stand-in used further down.</p>" +
+    "<div class='card try'><form class='form' data-tform novalidate>" +
+    "<label>WordPress website<input data-tsite type='url' inputmode='url' autocomplete='url' placeholder='https://yourblog.com' maxlength='300' required></label>" +
+    "<label>Topic for a new post<input data-ttopic type='text' placeholder='e.g. how to choose a coffee grinder' maxlength='120' required></label>" +
+    "<button class='btn' data-trun type='submit' disabled>Run it live</button></form>" +
+    "<div class='status' data-tstatus></div>" +
+    "<div data-tout style='display:none'><div class='log' data-tlog></div>" +
+    "<pre class='brief' data-tbrief style='display:none;margin-top:10px;max-height:420px'></pre><div data-tresult></div></div>" +
+    "<p class='fine'>Runs on Groq <code>openai/gpt-oss-120b</code>. It only reads public posts through the site's standard WordPress API and never writes anything. " +
+    "Nothing you enter is stored, but the site address and topic are sent to the model provider, so don't enter anything private. " +
+    "A run takes about 20 to 60 seconds. Runs are capped per visitor and per day to keep costs fixed.</p></div></section>";
 
   html += "<section class='step' id='s1'><div class='num'>1</div><h2>Watch it work</h2>" +
     "<p>Pick one of the " + D.cases.length + " test topics and step through a run on a fictional coffee-roaster site with " + D.posts.length +
@@ -193,6 +361,7 @@
   html += "<div class='foot'><h2>How this was built, and its limits</h2>" +
     "<p>I wrote the specification and the rules: read-only access to the site, cite only what was read, a hard limit on research steps, " +
     "everything testable without an API key, and one workflow for any model provider. Claude, an AI coding assistant, wrote the code. I reviewed it, ran the tests and the evaluations, and directed the fixes.</p><ul>" +
+    "<li>The live box at the top calls the real service; it has its own daily budget, separate from my own usage, and only accepts requests from this page.</li>" +
     "<li>Steps 1 and 2 are replayed from the repository's own code, run for this page; nothing is re-calculated in your browser.</li>" +
     "<li>Steps 3 and 4 report recorded live runs from the repository's README and examples folder.</li>" +
     "<li>Seven test topics on a fictional site is a health check, not a benchmark. It reads blog posts only, not other page types.</li></ul>" +
@@ -202,6 +371,9 @@
   root.innerHTML = html;
 
   // ------------------------------------------------------------- behaviour
+  $("[data-tform]").addEventListener("submit", runLive);
+  loadStatus();
+
   function total() { return events(D.cases[cIdx]).length; }
   function redraw() {
     $("[data-run]").innerHTML = runHTML();
