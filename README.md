@@ -4,6 +4,8 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 
 > *Previously named `wp-brief-agent`.*
 
+**Try it live:** [outview.co.za/case-study-content-brief](https://outview.co.za/case-study-content-brief/). A walkthrough of real runs, and a "try it" box that runs the agent on a sample site (limited number of runs per day).
+
 ## In plain English
 
 **The problem.** Before someone writes a new article for a website, they usually need a brief: an outline, a list of existing pages to link to, and facts the site has already published. Putting that together means reading through a lot of old posts.
