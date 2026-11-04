@@ -4,7 +4,7 @@ An AI helper that reads a WordPress website and writes a **content brief**: a pl
 
 > *Previously named `wp-brief-agent`.*
 
-**Try it live:** [outview.co.za/case-study-content-brief](https://outview.co.za/case-study-content-brief/). A walkthrough of real runs, and a "try it" box that runs the agent on a sample site (limited number of runs per day).
+**Try it live:** [outview.co.za/case-study-content-brief](https://outview.co.za/case-study-content-brief/). Enter any public WordPress site and a topic, and watch the agent research it and write a brief with a real model (limited runs per day). The page also steps through scripted test runs on a fictional site.
 
 ## In plain English
 
